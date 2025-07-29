@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>Your Movie Collection ({{ movies|length }} movies)</h2>
+    <div style="display: flex; gap: 1rem; align-items: center;">
+        <input type="text" id="searchInput" placeholder="Search movies..." 
+               style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
+        <button class="btn btn-primary" onclick="getRandomMovie()">Random Movie</button>
+    </div>
+</div>
+
+<div class="movie-grid" style="display: grid; gap: 1rem;">
+    {% for movie in movies %}
+    <div class="movie-card" data-title="{{ movie.title|lower }}" 
+         style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;"
+         onclick="openTagModal({{ movie.id }}, '{{ movie.title|replace("'", "\\'") }}')">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <h3 style="color: #1e293b; margin-bottom: 0.5rem; flex: 1;">{{ movie.title }}</h3>
+            <span style="color: #64748b; font-size: 0.875rem; margin-left: 1rem;">Click to tag</span>
+        </div>
+        
+        <div class="movie-tags">
+            {% if movie.category_names %}
+                {% set names = movie.category_names.split(',') %}
+                {% set colors = movie.category_colors.split(',') %}
+                {% for name in names %}
+                <span class="tag" style="background-color: {{ colors[loop.index0] }};">
+                    {{ name }}
+                </span>
+                {% endfor %}
+            {% else %}
+                <span style="color: #9ca3af; font-style: italic;">No tags</span>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tag Modal -->
+<div id="tagModal" class="modal">
+    <div class="modal-content">
+        <h3 id="modalTitle">Tag Movie</h3>
+        <div class="form-group">
+            <label>Select Categories:</label>
+            <div class="checkbox-group" id="categoryCheckboxes">
+                {% for category in categories %}
+                <div class="checkbox-item">
+                    <input type="checkbox" id="cat_{{ category.id }}" value="{{ category.id }}">
+                    <label for="cat_{{ category.id }}">
+                        <span class="tag" style="background-color: {{ category.color }};">{{ category.name }}</span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeTagModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveTags()">Save Tags</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentMovieId = null;
+
+// Debug function to test if scripts are loading
+console.log("Index page scripts loaded");
+
+function getRandomMovie() {
+    console.log("getRandomMovie called directly");
+    
+    // Simple API call - no filters, just weighted selection from all tagged movies
+    const url = '/api/movies/random?exclude_untagged=true&use_weights=true';
+    console.log("Fetching:", url);
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(movie => {
+            let message = `🎬 Tonight you're watching:\n\n${movie.title}`;
+            if (movie.category_names) {
+                const tags = movie.category_names.split(',').join(', ');
+                message += `\n\n🏷️ Genres: ${tags}`;
+            }
+            message += `\n\n⚖️ Selected using weighted randomization`;
+            alert(message);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (error.message.includes('404')) {
+                alert('No tagged movies found. Please tag some movies first!');
+            } else {
+                alert('Error getting random movie. Please try again.');
+            }
+        });
+}
+
+function openTagModal(movieId, title) {
+    currentMovieId = movieId;
+    document.getElementById('modalTitle').textContent = `Tag: ${title}`;
+    
+    // Clear all checkboxes
+    document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+    });
+    
+    // Load current tags
+    fetch(`/api/movies/${movieId}/tags`)
+        .then(response => response.json())
+        .then(tags => {
+            tags.forEach(tag => {
+                const checkbox = document.getElementById(`cat_${tag.id}`);
+                if (checkbox) checkbox.checked = true;
+            });
+        });
+    
+    document.getElementById('tagModal').style.display = 'block';
+}
+
+function closeTagModal() {
+    document.getElementById('tagModal').style.display = 'none';
+    currentMovieId = null;
+}
+
+function saveTags() {
+    if (!currentMovieId) return;
+    
+    const selectedCategories = [];
+    document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]:checked').forEach(cb => {
+        selectedCategories.push(parseInt(cb.value));
+    });
+    
+    fetch(`/api/movies/${currentMovieId}/tags`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ category_ids: selectedCategories })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Refresh to show updated tags
+        }
+    });
+}
+
+// Enhanced search with debouncing
+let searchTimeout;
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase().trim();
+    
+    // Clear previous timeout
+    clearTimeout(searchTimeout);
+    
+    if (searchTerm === '') {
+        // Show all movies if search is empty
+        document.querySelectorAll('.movie-card').forEach(card => {
+            card.style.display = 'block';
+        });
+        return;
+    }
+    
+    // Debounce search
+    searchTimeout = setTimeout(() => {
+        document.querySelectorAll('.movie-card').forEach(card => {
+            const title = card.dataset.title;
+            card.style.display = title.includes(searchTerm) ? 'block' : 'none';
+        });
+    }, 300);
+});
+
+// Close modals when clicking outside
+document.getElementById('tagModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeTagModal();
+    }
+});
+
+// Add hover effects
+document.querySelectorAll('.movie-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.style.transform = 'translateY(-2px)';
+        this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+    });
+    
+    card.addEventListener('mouseleave', function() {
+        this.style.transform = 'translateY(0)';
+        this.style.boxShadow = 'none';
+    });
+});
+</script>
+{% endblock %}

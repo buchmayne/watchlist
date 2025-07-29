@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>Manage Categories</h2>
+    <button class="btn btn-primary" onclick="showCreateModal()">Add Category</button>
+</div>
+
+<div class="categories-grid" style="display: grid; gap: 1rem;">
+    {% for category in categories %}
+    <div class="category-card" style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <div>
+                <span class="tag" style="background-color: {{ category.color }};">{{ category.name }}</span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button class="btn btn-secondary" onclick="editCategory({{ category.id }}, '{{ category.name|replace("'", "\\'") }}', '{{ category.color }}', {{ category.weight|default(1.0) }})" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Edit</button>
+                <button class="btn btn-danger" onclick="deleteCategory({{ category.id }})" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Delete</button>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: between; align-items: center; font-size: 0.875rem; color: #64748b;">
+            <span>Weight: {{ "%.1f"|format(category.weight|default(1.0)) }}</span>
+            <span style="margin-left: auto;">
+                {% if category.weight|default(1.0) > 1.0 %}
+                    📈 Higher chance
+                {% elif category.weight|default(1.0) < 1.0 %}
+                    📉 Lower chance
+                {% else %}
+                    ⚖️ Normal chance
+                {% endif %}
+            </span>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Create Category Modal -->
+<div id="createModal" class="modal">
+    <div class="modal-content">
+        <h3>Create New Category</h3>
+        <div class="form-group">
+            <label for="categoryName">Category Name:</label>
+            <input type="text" id="categoryName" placeholder="e.g., Action, Comedy">
+        </div>
+        <div class="form-group">
+            <label for="categoryColor">Color:</label>
+            <input type="color" id="categoryColor" value="#3b82f6">
+        </div>
+        <div class="form-group">
+            <label for="categoryWeight">Weight (0.0 - 10.0):</label>
+            <input type="number" id="categoryWeight" value="1.0" min="0" max="10" step="0.1" style="width: 100%;">
+            <small style="color: #64748b; font-size: 0.75rem;">
+                Higher weights = more likely to be selected randomly. 1.0 = normal, 2.0 = twice as likely, 0.5 = half as likely
+            </small>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="createCategory()">Create</button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Category Modal -->
+<div id="editModal" class="modal">
+    <div class="modal-content">
+        <h3>Edit Category</h3>
+        <div class="form-group">
+            <label for="editCategoryName">Category Name:</label>
+            <input type="text" id="editCategoryName" placeholder="e.g., Action, Comedy">
+        </div>
+        <div class="form-group">
+            <label for="editCategoryColor">Color:</label>
+            <input type="color" id="editCategoryColor">
+        </div>
+        <div class="form-group">
+            <label for="editCategoryWeight">Weight (0.0 - 10.0):</label>
+            <input type="number" id="editCategoryWeight" min="0" max="10" step="0.1" style="width: 100%;">
+            <small style="color: #64748b; font-size: 0.75rem;">
+                Higher weights = more likely to be selected randomly. 1.0 = normal, 2.0 = twice as likely, 0.5 = half as likely
+            </small>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="updateCategory()">Update</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+console.log("Categories page scripts loaded");
+
+let currentEditingCategoryId = null;
+
+function showCreateModal() {
+    document.getElementById('createModal').style.display = 'block';
+}
+
+function closeCreateModal() {
+    document.getElementById('createModal').style.display = 'none';
+    document.getElementById('categoryName').value = '';
+    document.getElementById('categoryColor').value = '#3b82f6';
+    document.getElementById('categoryWeight').value = '1.0';
+}
+
+function editCategory(categoryId, name, color, weight) {
+    currentEditingCategoryId = categoryId;
+    document.getElementById('editCategoryName').value = name;
+    document.getElementById('editCategoryColor').value = color;
+    document.getElementById('editCategoryWeight').value = weight;
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function closeEditModal() {
+    document.getElementById('editModal').style.display = 'none';
+    currentEditingCategoryId = null;
+}
+
+function createCategory() {
+    const name = document.getElementById('categoryName').value.trim();
+    const color = document.getElementById('categoryColor').value;
+    const weight = parseFloat(document.getElementById('categoryWeight').value);
+    
+    if (!name) {
+        alert('Please enter a category name');
+        return;
+    }
+    
+    if (weight < 0 || weight > 10) {
+        alert('Weight must be between 0.0 and 10.0');
+        return;
+    }
+    
+    fetch('/api/categories', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, color, weight })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.detail || 'Error creating category');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating category');
+    });
+}
+
+function updateCategory() {
+    if (!currentEditingCategoryId) return;
+    
+    const name = document.getElementById('editCategoryName').value.trim();
+    const color = document.getElementById('editCategoryColor').value;
+    const weight = parseFloat(document.getElementById('editCategoryWeight').value);
+    
+    if (!name) {
+        alert('Please enter a category name');
+        return;
+    }
+    
+    if (weight < 0 || weight > 10) {
+        alert('Weight must be between 0.0 and 10.0');
+        return;
+    }
+    
+    fetch(`/api/categories/${currentEditingCategoryId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, color, weight })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.detail || 'Error updating category');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating category');
+    });
+}
+
+function deleteCategory(categoryId) {
+    if (!confirm('Are you sure? This will remove this category from all movies.')) {
+        return;
+    }
+    
+    fetch(`/api/categories/${categoryId}`, {
+        method: 'DELETE'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+
+// Close modals when clicking outside
+document.getElementById('createModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeCreateModal();
+    }
+});
+
+document.getElementById('editModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeEditModal();
+    }
+});
+</script>
+{% endblock %}
