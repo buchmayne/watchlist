@@ -96,23 +96,61 @@ def init_db():
         conn.commit()
 
 def load_movies_from_file(filename='movie_titles.json'):
-    """Load movies from the scraped JSON file into database."""
+    """Load only new movies from the scraped JSON file into database.
+
+    Handles title format changes (e.g., 'Movie' -> 'Movie (2020)') by updating
+    existing entries rather than creating duplicates.
+    """
+    import re
+
     if not os.path.exists(filename):
         print(f"No {filename} found. Run the scraper first.")
         return
-        
+
     with open(filename, 'r', encoding='utf-8') as f:
         titles = json.load(f)
-    
+
+    year_pattern = re.compile(r'^(.+?)\s*\((\d{4})\)$')
+
     with get_db() as conn:
+        # Get existing titles mapped by normalized name (without year)
+        existing_movies = {}
+        for row in conn.execute('SELECT id, title FROM movies').fetchall():
+            existing_movies[row['title']] = row['id']
+            # Also map by title without year for matching
+            match = year_pattern.match(row['title'])
+            if match:
+                existing_movies[match.group(1).strip()] = row['id']
+
+        added = 0
+        updated = 0
+
         for title in titles:
+            if title in existing_movies:
+                # Exact match exists, skip
+                continue
+
+            # Check if title without year exists (e.g., "Movie" when adding "Movie (2020)")
+            match = year_pattern.match(title)
+            if match:
+                base_title = match.group(1).strip()
+                if base_title in existing_movies:
+                    # Update existing entry to include year
+                    movie_id = existing_movies[base_title]
+                    conn.execute('UPDATE movies SET title = ? WHERE id = ?', (title, movie_id))
+                    updated += 1
+                    continue
+
+            # New movie, insert it
             try:
-                conn.execute('INSERT OR IGNORE INTO movies (title) VALUES (?)', (title,))
+                conn.execute('INSERT INTO movies (title) VALUES (?)', (title,))
+                added += 1
             except sqlite3.Error as e:
                 print(f"Error inserting {title}: {e}")
+
         conn.commit()
-    
-    print(f"Loaded {len(titles)} movies into database")
+
+    print(f"Found {len(titles)} movies in file: added {added} new, updated {updated} existing")
 
 # Routes
 @app.get("/", response_class=HTMLResponse)
@@ -426,4 +464,4 @@ async def startup_event():
 
 # For development
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)

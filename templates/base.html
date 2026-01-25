@@ -3,106 +3,208 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Movie Tagger{% endblock %}</title>
+    <title>{% block title %}Watchlist{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Nord Polar Night - backgrounds */
+            --nord0: #2E3440;
+            --nord1: #3B4252;
+            --nord2: #434C5E;
+            --nord3: #4C566A;
+
+            /* Nord Snow Storm - text */
+            --nord4: #D8DEE9;
+            --nord5: #E5E9F0;
+            --nord6: #ECEFF4;
+
+            /* Nord Frost - primary accent colors */
+            --frost1: #8FBCBB;
+            --frost2: #88C0D0;
+            --frost3: #81A1C1;
+            --frost4: #5E81AC;
+
+            /* Nord Aurora - semantic colors */
+            --aurora-red: #BF616A;
+            --aurora-orange: #D08770;
+            --aurora-yellow: #EBCB8B;
+            --aurora-green: #A3BE8C;
+            --aurora-purple: #B48EAD;
+
+            /* Semantic mappings */
+            --bg-base: var(--nord0);
+            --bg-surface: var(--nord1);
+            --bg-elevated: var(--nord2);
+            --bg-interactive: var(--nord3);
+            --text-primary: var(--nord6);
+            --text-secondary: var(--nord4);
+            --text-muted: #7b88a1;
+            --accent: var(--frost2);
+            --accent-light: var(--frost1);
+            --accent-dark: var(--frost4);
+            --border-subtle: rgba(136, 192, 208, 0.15);
+            --border-accent: rgba(136, 192, 208, 0.3);
+
+            --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.25);
+            --shadow-glow: 0 0 30px rgba(136, 192, 208, 0.15);
+            --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f8fafc;
-            color: #334155;
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, var(--nord0) 0%, #252b37 50%, var(--nord0) 100%);
+            color: var(--text-primary);
             line-height: 1.6;
+            min-height: 100vh;
         }
-        
+
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 0 24px;
         }
-        
+
         .header {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 1rem 0;
-            margin-bottom: 2rem;
+            background: linear-gradient(180deg, var(--bg-surface) 0%, rgba(59, 66, 82, 0.8) 100%);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 1.25rem 0;
+            margin-bottom: 2.5rem;
+            backdrop-filter: blur(10px);
         }
-        
+
         .nav {
             display: flex;
-            gap: 2rem;
+            gap: 2.5rem;
             align-items: center;
         }
-        
+
         .nav h1 {
-            color: #1e293b;
-            font-size: 1.5rem;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 1.75rem;
+            letter-spacing: 0.02em;
+            background: linear-gradient(135deg, var(--frost1) 0%, var(--frost2) 50%, var(--frost3) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
-        
+
+        .nav-links {
+            display: flex;
+            gap: 0.25rem;
+        }
+
         .nav a {
-            color: #64748b;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
             text-decoration: none;
             padding: 0.5rem 1rem;
-            border-radius: 6px;
-            transition: background-color 0.2s;
+            border-radius: 8px;
+            transition: all 0.25s var(--transition-smooth);
+            position: relative;
         }
-        
-        .nav a:hover, .nav a.active {
-            background: #f1f5f9;
-            color: #1e293b;
+
+        .nav a:hover {
+            color: var(--text-primary);
+            background: rgba(136, 192, 208, 0.1);
         }
-        
+
+        .nav a.active {
+            color: var(--frost2);
+            background: rgba(136, 192, 208, 0.15);
+        }
+
+        .nav a.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 3px;
+            background: var(--frost2);
+            border-radius: 2px;
+        }
+
         .btn {
-            padding: 0.5rem 1rem;
+            font-family: 'Nunito', sans-serif;
+            font-weight: 600;
+            padding: 0.6rem 1.25rem;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             font-size: 0.875rem;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s var(--transition-smooth);
             text-decoration: none;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        
+
         .btn-primary {
-            background: #3b82f6;
-            color: white;
+            background: linear-gradient(135deg, var(--frost2) 0%, var(--frost3) 100%);
+            color: var(--nord0);
+            box-shadow: 0 4px 15px rgba(136, 192, 208, 0.3);
         }
-        
+
         .btn-primary:hover {
-            background: #2563eb;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(136, 192, 208, 0.4);
         }
-        
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
         .btn-secondary {
-            background: #e2e8f0;
-            color: #475569;
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-accent);
         }
-        
+
         .btn-secondary:hover {
-            background: #cbd5e1;
+            background: var(--bg-interactive);
+            color: var(--text-primary);
         }
-        
+
         .btn-danger {
-            background: #ef4444;
-            color: white;
+            background: rgba(191, 97, 106, 0.15);
+            color: var(--aurora-red);
+            border: 1px solid rgba(191, 97, 106, 0.3);
         }
-        
+
         .btn-danger:hover {
-            background: #dc2626;
+            background: var(--aurora-red);
+            color: var(--nord6);
+            border-color: var(--aurora-red);
         }
-        
+
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.8rem;
+        }
+
         .tag {
             display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
             font-size: 0.75rem;
-            font-weight: 500;
+            font-weight: 600;
             color: white;
             margin: 0.125rem;
+            letter-spacing: 0.02em;
         }
-        
+
         .modal {
             display: none;
             position: fixed;
@@ -110,77 +212,216 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5);
+            background: rgba(46, 52, 64, 0.9);
+            backdrop-filter: blur(8px);
             z-index: 1000;
+            animation: modalFadeIn 0.25s var(--transition-smooth);
         }
-        
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
         .modal-content {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
-            padding: 2rem;
-            border-radius: 8px;
+            background: var(--bg-surface);
+            padding: 1.75rem;
+            border-radius: 16px;
             width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
+            max-width: 460px;
+            max-height: 85vh;
             overflow-y: auto;
+            border: 1px solid var(--border-accent);
+            box-shadow: var(--shadow-soft), var(--shadow-glow);
+            animation: modalSlideIn 0.3s var(--transition-smooth);
         }
-        
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -48%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
         .modal h3 {
-            margin-bottom: 1rem;
-            color: #1e293b;
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            margin-bottom: 1.25rem;
+            color: var(--text-primary);
         }
-        
+
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.25rem;
         }
-        
+
         .form-group label {
             display: block;
             margin-bottom: 0.5rem;
-            font-weight: 500;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
         }
-        
-        .form-group input {
+
+        .form-group input[type="text"],
+        .form-group input[type="number"] {
             width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #d1d5db;
-            border-radius: 4px;
+            padding: 0.7rem 1rem;
+            background: var(--nord0);
+            border: 1px solid var(--border-accent);
+            border-radius: 8px;
             font-size: 1rem;
+            color: var(--text-primary);
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.25s var(--transition-smooth);
         }
-        
+
+        .form-group input[type="text"]:focus,
+        .form-group input[type="number"]:focus {
+            outline: none;
+            border-color: var(--frost2);
+            box-shadow: 0 0 0 3px rgba(136, 192, 208, 0.2);
+        }
+
+        .form-group input[type="text"]::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-group input[type="color"] {
+            width: 100%;
+            height: 44px;
+            padding: 4px;
+            background: var(--nord0);
+            border: 1px solid var(--border-accent);
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .form-group small {
+            display: block;
+            margin-top: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
         .checkbox-group {
-            max-height: 300px;
+            max-height: 260px;
             overflow-y: auto;
-            border: 1px solid #e5e7eb;
-            border-radius: 4px;
+            background: var(--nord0);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
             padding: 0.5rem;
         }
-        
+
+        .checkbox-group::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .checkbox-group::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .checkbox-group::-webkit-scrollbar-thumb {
+            background: var(--nord3);
+            border-radius: 3px;
+        }
+
         .checkbox-item {
             display: flex;
             align-items: center;
-            padding: 0.5rem;
-            border-radius: 4px;
-            transition: background-color 0.2s;
+            padding: 0.5rem 0.65rem;
+            border-radius: 6px;
+            transition: background-color 0.2s var(--transition-smooth);
+            cursor: pointer;
         }
-        
+
         .checkbox-item:hover {
-            background: #f9fafb;
+            background: var(--bg-surface);
         }
-        
-        .checkbox-item input {
-            margin-right: 0.5rem;
-            width: auto;
+
+        .checkbox-item input[type="checkbox"] {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border: 2px solid var(--nord3);
+            border-radius: 4px;
+            margin-right: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s var(--transition-smooth);
+            position: relative;
+            flex-shrink: 0;
         }
-        
+
+        .checkbox-item input[type="checkbox"]:checked {
+            background: var(--frost2);
+            border-color: var(--frost2);
+        }
+
+        .checkbox-item input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--nord0);
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            margin: 0;
+        }
+
         .modal-actions {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             justify-content: flex-end;
             margin-top: 1.5rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        /* Page title styling */
+        h2 {
+            font-family: 'Quicksand', sans-serif;
+            font-weight: 700;
+            font-size: 2rem;
+            color: var(--text-primary);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--nord0);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--nord2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--nord3);
+        }
+
+        /* Animation utilities */
+        @keyframes cardReveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -188,17 +429,19 @@
     <div class="header">
         <div class="container">
             <nav class="nav">
-                <h1>Movie Tagger</h1>
-                <a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}">Movies</a>
-                <a href="/categories" class="{% if request.endpoint == 'manage_categories' %}active{% endif %}">Categories</a>
+                <h1>Watchlist</h1>
+                <div class="nav-links">
+                    <a href="/" class="{% if request.endpoint == 'index' %}active{% endif %}">Movies</a>
+                    <a href="/categories" class="{% if request.endpoint == 'manage_categories' %}active{% endif %}">Categories</a>
+                </div>
             </nav>
         </div>
     </div>
-    
+
     <div class="container">
         {% block content %}{% endblock %}
     </div>
-    
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

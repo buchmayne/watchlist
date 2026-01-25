@@ -1,25 +1,457 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h2>Your Movie Collection ({{ movies|length }} movies)</h2>
-    <div style="display: flex; gap: 1rem; align-items: center;">
-        <input type="text" id="searchInput" placeholder="Search movies..." 
-               style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 4px;">
-        <button class="btn btn-primary" onclick="getRandomMovie()">Random Movie</button>
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+    }
+
+    .page-header h2 {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+    }
+
+    .movie-count {
+        font-family: 'Nunito', sans-serif;
+        font-size: 1rem;
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+
+    .controls {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .search-wrapper {
+        position: relative;
+    }
+
+    .search-wrapper::before {
+        content: '';
+        position: absolute;
+        left: 0.875rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237b88a1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'/%3E%3C/svg%3E");
+        background-size: contain;
+        pointer-events: none;
+    }
+
+    #searchInput {
+        padding: 0.6rem 1rem 0.6rem 2.5rem;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-accent);
+        border-radius: 10px;
+        font-size: 0.875rem;
+        color: var(--text-primary);
+        font-family: 'Nunito', sans-serif;
+        width: 240px;
+        transition: all 0.25s var(--transition-smooth);
+    }
+
+    #searchInput:focus {
+        outline: none;
+        border-color: var(--frost2);
+        box-shadow: 0 0 0 3px rgba(136, 192, 208, 0.15);
+        width: 280px;
+    }
+
+    #searchInput::placeholder {
+        color: var(--text-muted);
+    }
+
+    .btn-random::before {
+        content: '🎲';
+        margin-right: 0.25rem;
+    }
+
+    .movie-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+    }
+
+    .movie-card {
+        background: linear-gradient(145deg, var(--nord2) 0%, var(--nord1) 100%);
+        border: 1px solid var(--border-accent);
+        border-radius: 12px;
+        padding: 1.25rem;
+        cursor: pointer;
+        transition: all 0.3s var(--transition-smooth);
+        position: relative;
+        opacity: 0;
+        transform: translateY(12px);
+        animation: cardReveal 0.4s var(--transition-smooth) forwards;
+    }
+
+    .movie-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        padding: 1px;
+        background: linear-gradient(135deg, var(--frost1), var(--frost3));
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        opacity: 0;
+        transition: opacity 0.3s var(--transition-smooth);
+    }
+
+    .movie-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3), 0 0 20px rgba(136, 192, 208, 0.1);
+    }
+
+    .movie-card:hover::before {
+        opacity: 1;
+    }
+
+    .movie-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.875rem;
+        gap: 1rem;
+    }
+
+    .movie-title {
+        font-family: 'Nunito', sans-serif;
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--text-primary);
+        line-height: 1.4;
+        flex: 1;
+    }
+
+    .tag-hint {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+        opacity: 0;
+        transition: all 0.25s var(--transition-smooth);
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: var(--nord3);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+    .movie-card:hover .tag-hint {
+        opacity: 1;
+        color: var(--frost2);
+    }
+
+    .movie-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+        min-height: 26px;
+        align-items: center;
+    }
+
+    .no-tags {
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.2rem 0.5rem;
+        background: rgba(136, 192, 208, 0.08);
+        border-radius: 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-muted);
+        background: var(--bg-surface);
+        border: 1px dashed var(--border-accent);
+        border-radius: 16px;
+    }
+
+    .empty-state h3 {
+        font-family: 'Quicksand', sans-serif;
+        font-size: 1.4rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    /* Modal enhancements */
+    #modalTitle {
+        border-bottom: 1px solid var(--border-subtle);
+        padding-bottom: 0.875rem;
+    }
+
+    /* ========== Reveal Overlay Styles ========== */
+    .reveal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(46, 52, 64, 0.97);
+        backdrop-filter: blur(12px);
+        z-index: 2000;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .reveal-overlay.active {
+        display: flex;
+        animation: overlayFadeIn 0.3s var(--transition-smooth);
+    }
+
+    @keyframes overlayFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .reveal-overlay::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120%;
+        height: 120%;
+        background: radial-gradient(ellipse at center, rgba(136, 192, 208, 0.08) 0%, transparent 60%);
+        pointer-events: none;
+    }
+
+    .reveal-container {
+        position: relative;
+        text-align: center;
+        z-index: 1;
+    }
+
+    .reveal-spinner {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;
+        font-size: clamp(2rem, 8vw, 4.5rem);
+        color: var(--frost3);
+        min-height: 1.2em;
+        line-height: 1.2;
+        text-shadow: 0 0 40px rgba(136, 192, 208, 0.3);
+        transition: opacity 0.2s;
+        padding: 0 1rem;
+        max-width: 90vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .reveal-spinner.cycling {
+        animation: textBlur 0.1s ease-in-out infinite alternate;
+    }
+
+    @keyframes textBlur {
+        0% { filter: blur(0px); opacity: 0.9; }
+        100% { filter: blur(2px); opacity: 0.7; }
+    }
+
+    .reveal-spinner.slowing {
+        animation: textBlur 0.15s ease-in-out infinite alternate;
+    }
+
+    .reveal-result {
+        display: none;
+        opacity: 0;
+    }
+
+    .reveal-result.visible {
+        display: block;
+        animation: resultReveal 0.5s var(--transition-smooth) forwards;
+    }
+
+    @keyframes resultReveal {
+        0% {
+            opacity: 0;
+            transform: scale(0.85);
+        }
+        50% {
+            transform: scale(1.03);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .reveal-title {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;
+        font-size: clamp(2rem, 8vw, 4.5rem);
+        color: var(--nord6);
+        text-shadow: 0 0 60px var(--frost2), 0 0 100px rgba(136, 192, 208, 0.4);
+        margin-bottom: 1.5rem;
+        line-height: 1.2;
+        padding: 0 1rem;
+        animation: titleGlow 2s ease-in-out infinite;
+    }
+
+    @keyframes titleGlow {
+        0%, 100% { text-shadow: 0 0 60px var(--frost2), 0 0 100px rgba(136, 192, 208, 0.4); }
+        50% { text-shadow: 0 0 80px var(--frost2), 0 0 120px rgba(136, 192, 208, 0.6); }
+    }
+
+    .reveal-tags {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0 1rem;
+    }
+
+    .reveal-tags .tag {
+        font-size: 1rem;
+        padding: 0.4rem 1rem;
+        opacity: 0;
+        transform: translateY(10px);
+        animation: tagFadeIn 0.4s var(--transition-smooth) forwards;
+    }
+
+    @keyframes tagFadeIn {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .reveal-actions {
+        position: absolute;
+        bottom: 3rem;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 1rem;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .reveal-actions.visible {
+        opacity: 1;
+    }
+
+    /* Mute button */
+    .reveal-mute-btn {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        background: rgba(136, 192, 208, 0.1);
+        border: 1px solid var(--border-accent);
+        border-radius: 8px;
+        padding: 0.6rem;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.25s var(--transition-smooth);
+    }
+
+    .reveal-mute-btn:hover {
+        background: rgba(136, 192, 208, 0.2);
+    }
+
+    .reveal-mute-btn svg {
+        width: 20px;
+        height: 20px;
+        color: var(--frost2);
+    }
+
+    .reveal-mute-btn .sound-off {
+        display: none;
+    }
+
+    .reveal-mute-btn.muted .sound-on {
+        display: none;
+    }
+
+    .reveal-mute-btn.muted .sound-off {
+        display: block;
+    }
+
+    /* Particles */
+    .reveal-particles {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+    }
+
+    .particle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        opacity: 0;
+        animation: particleBurst 1.5s ease-out forwards;
+    }
+
+    @keyframes particleBurst {
+        0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+        }
+        100% {
+            opacity: 0;
+            transform: translate(var(--tx), var(--ty)) scale(0.3);
+        }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .reveal-actions {
+            flex-direction: column;
+            width: 80%;
+        }
+
+        .reveal-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>
+
+<div class="page-header">
+    <h2>Movies <span class="movie-count">{{ movies|length }} titles</span></h2>
+    <div class="controls">
+        <div class="search-wrapper">
+            <input type="text" id="searchInput" placeholder="Search movies...">
+        </div>
+        <button class="btn btn-primary btn-random" onclick="getRandomMovie()">Pick Random</button>
     </div>
 </div>
 
-<div class="movie-grid" style="display: grid; gap: 1rem;">
+{% if movies %}
+<div class="movie-grid">
     {% for movie in movies %}
-    <div class="movie-card" data-title="{{ movie.title|lower }}" 
-         style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;"
+    <div class="movie-card" data-title="{{ movie.title|lower }}"
+         style="animation-delay: {{ loop.index0 * 25 }}ms;"
          onclick="openTagModal({{ movie.id }}, '{{ movie.title|replace("'", "\\'") }}')">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <h3 style="color: #1e293b; margin-bottom: 0.5rem; flex: 1;">{{ movie.title }}</h3>
-            <span style="color: #64748b; font-size: 0.875rem; margin-left: 1rem;">Click to tag</span>
+        <div class="movie-header">
+            <h3 class="movie-title">{{ movie.title }}</h3>
+            <span class="tag-hint">+ Tag</span>
         </div>
-        
+
         <div class="movie-tags">
             {% if movie.category_names %}
                 {% set names = movie.category_names.split(',') %}
@@ -30,19 +462,25 @@
                 </span>
                 {% endfor %}
             {% else %}
-                <span style="color: #9ca3af; font-style: italic;">No tags</span>
+                <span class="no-tags">No tags yet</span>
             {% endif %}
         </div>
     </div>
     {% endfor %}
 </div>
+{% else %}
+<div class="empty-state">
+    <h3>No Movies Yet</h3>
+    <p>Add some movies to get started with your collection.</p>
+</div>
+{% endif %}
 
 <!-- Tag Modal -->
 <div id="tagModal" class="modal">
     <div class="modal-content">
         <h3 id="modalTitle">Tag Movie</h3>
         <div class="form-group">
-            <label>Select Categories:</label>
+            <label>Select Categories</label>
             <div class="checkbox-group" id="categoryCheckboxes">
                 {% for category in categories %}
                 <div class="checkbox-item">
@@ -60,58 +498,311 @@
         </div>
     </div>
 </div>
+
+<!-- Random Movie Reveal Overlay -->
+<div id="revealOverlay" class="reveal-overlay">
+    <button class="reveal-mute-btn" onclick="toggleRevealSound()" title="Toggle sound">
+        <svg class="sound-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+        </svg>
+        <svg class="sound-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+            <line x1="23" y1="9" x2="17" y2="15"/>
+            <line x1="17" y1="9" x2="23" y2="15"/>
+        </svg>
+    </button>
+    <div class="reveal-container">
+        <div class="reveal-spinner" id="revealSpinner"></div>
+        <div class="reveal-result" id="revealResult">
+            <h1 class="reveal-title" id="revealTitle"></h1>
+            <div class="reveal-tags" id="revealTags"></div>
+        </div>
+        <div class="reveal-particles" id="revealParticles"></div>
+    </div>
+    <div class="reveal-actions" id="revealActions">
+        <button class="btn btn-secondary" onclick="closeReveal()">Close</button>
+        <button class="btn btn-primary" onclick="pickAgain()">🎲 Pick Again</button>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 let currentMovieId = null;
 
-// Debug function to test if scripts are loading
-console.log("Index page scripts loaded");
+// ========== Reveal System State ==========
+let revealSoundEnabled = true;
+let audioContext = null;
+let selectedMovie = null;
+let cycleInterval = null;
 
-function getRandomMovie() {
-    console.log("getRandomMovie called directly");
-    
-    // Simple API call - no filters, just weighted selection from all tagged movies
-    const url = '/api/movies/random?exclude_untagged=true&use_weights=true';
-    console.log("Fetching:", url);
-    
-    fetch(url)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+// Get all movie titles from the page for cycling
+function getMovieTitles() {
+    const cards = document.querySelectorAll('.movie-card');
+    return Array.from(cards).map(card => {
+        const titleEl = card.querySelector('.movie-title');
+        return titleEl ? titleEl.textContent.trim() : '';
+    }).filter(t => t);
+}
+
+// ========== Audio System ==========
+function initAudioContext() {
+    if (!audioContext) {
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+}
+
+function playTickSound(pitch = 800) {
+    if (!revealSoundEnabled || !audioContext) return;
+
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
+
+    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.05);
+}
+
+function playRevealSound() {
+    if (!revealSoundEnabled || !audioContext) return;
+
+    // Create a pleasant chime/ding sound
+    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 (C major chord)
+
+    frequencies.forEach((freq, i) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+        const startTime = audioContext.currentTime + (i * 0.08);
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.8);
+    });
+}
+
+function toggleRevealSound() {
+    revealSoundEnabled = !revealSoundEnabled;
+    const btn = document.querySelector('.reveal-mute-btn');
+    btn.classList.toggle('muted', !revealSoundEnabled);
+}
+
+// ========== Particle System ==========
+function createParticleBurst() {
+    const container = document.getElementById('revealParticles');
+    container.innerHTML = '';
+
+    const particleCount = 25;
+    const colors = ['#8FBCBB', '#88C0D0', '#81A1C1', '#5E81AC', '#A3BE8C'];
+
+    for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.className = 'particle';
+
+        // Random angle and distance
+        const angle = (Math.random() * 360) * (Math.PI / 180);
+        const distance = 100 + Math.random() * 200;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance - 50; // Bias upward
+
+        particle.style.setProperty('--tx', `${tx}px`);
+        particle.style.setProperty('--ty', `${ty}px`);
+        particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        particle.style.boxShadow = `0 0 10px ${particle.style.backgroundColor}`;
+        particle.style.animationDelay = `${Math.random() * 0.2}s`;
+        particle.style.left = '50%';
+        particle.style.top = '50%';
+
+        container.appendChild(particle);
+    }
+}
+
+// ========== Reveal Animation ==========
+async function getRandomMovie() {
+    const titles = getMovieTitles();
+
+    if (titles.length === 0) {
+        alert('No movies available. Please add some movies first!');
+        return;
+    }
+
+    // Initialize audio on user interaction
+    initAudioContext();
+
+    // Show overlay immediately
+    const overlay = document.getElementById('revealOverlay');
+    const spinner = document.getElementById('revealSpinner');
+    const result = document.getElementById('revealResult');
+    const actions = document.getElementById('revealActions');
+    const particles = document.getElementById('revealParticles');
+
+    overlay.classList.add('active');
+    spinner.style.display = 'block';
+    spinner.classList.add('cycling');
+    result.classList.remove('visible');
+    actions.classList.remove('visible');
+    particles.innerHTML = '';
+
+    // Fetch the actual random movie
+    try {
+        const response = await fetch('/api/movies/random?exclude_untagged=true&use_weights=true');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+        selectedMovie = await response.json();
+    } catch (error) {
+        console.error('Error:', error);
+        overlay.classList.remove('active');
+        if (error.message.includes('404')) {
+            alert('No tagged movies found. Please tag some movies first!');
+        } else {
+            alert('Error getting random movie. Please try again.');
+        }
+        return;
+    }
+
+    // Start cycling animation
+    let cycleCount = 0;
+    const totalCycles = 25;
+    let currentDelay = 60;
+
+    function cycle() {
+        cycleCount++;
+
+        // Pick a random title (not the final one until the end)
+        let randomTitle;
+        if (cycleCount < totalCycles) {
+            do {
+                randomTitle = titles[Math.floor(Math.random() * titles.length)];
+            } while (randomTitle === selectedMovie.title && titles.length > 1);
+        } else {
+            randomTitle = selectedMovie.title;
+        }
+
+        spinner.textContent = randomTitle;
+        playTickSound(600 + Math.random() * 400);
+
+        if (cycleCount < totalCycles) {
+            // Increase delay as we slow down (after first half)
+            if (cycleCount > totalCycles * 0.5) {
+                spinner.classList.remove('cycling');
+                spinner.classList.add('slowing');
+                currentDelay += 15;
             }
-            return response.json();
-        })
-        .then(movie => {
-            let message = `🎬 Tonight you're watching:\n\n${movie.title}`;
-            if (movie.category_names) {
-                const tags = movie.category_names.split(',').join(', ');
-                message += `\n\n🏷️ Genres: ${tags}`;
-            }
-            message += `\n\n⚖️ Selected using weighted randomization`;
-            alert(message);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            if (error.message.includes('404')) {
-                alert('No tagged movies found. Please tag some movies first!');
-            } else {
-                alert('Error getting random movie. Please try again.');
-            }
+            cycleInterval = setTimeout(cycle, currentDelay);
+        } else {
+            // Final reveal
+            setTimeout(() => {
+                revealFinalMovie();
+            }, 300);
+        }
+    }
+
+    // Start cycling
+    cycle();
+}
+
+function revealFinalMovie() {
+    const spinner = document.getElementById('revealSpinner');
+    const result = document.getElementById('revealResult');
+    const title = document.getElementById('revealTitle');
+    const tags = document.getElementById('revealTags');
+    const actions = document.getElementById('revealActions');
+
+    // Hide spinner
+    spinner.style.display = 'none';
+    spinner.classList.remove('cycling', 'slowing');
+
+    // Set up result
+    title.textContent = selectedMovie.title;
+
+    // Build tags HTML
+    tags.innerHTML = '';
+    if (selectedMovie.category_names) {
+        const names = selectedMovie.category_names.split(',');
+        const colors = selectedMovie.category_colors ? selectedMovie.category_colors.split(',') : [];
+
+        names.forEach((name, i) => {
+            const tag = document.createElement('span');
+            tag.className = 'tag';
+            tag.style.backgroundColor = colors[i] || '#5E81AC';
+            tag.style.animationDelay = `${0.2 + i * 0.1}s`;
+            tag.textContent = name.trim();
+            tags.appendChild(tag);
         });
+    }
+
+    // Show result with animation
+    result.classList.add('visible');
+
+    // Play reveal sound and create particles
+    playRevealSound();
+    createParticleBurst();
+
+    // Show actions after a moment
+    setTimeout(() => {
+        actions.classList.add('visible');
+    }, 600);
+}
+
+function closeReveal() {
+    const overlay = document.getElementById('revealOverlay');
+    overlay.classList.remove('active');
+
+    // Clear any running cycle
+    if (cycleInterval) {
+        clearTimeout(cycleInterval);
+        cycleInterval = null;
+    }
+
+    selectedMovie = null;
+}
+
+function pickAgain() {
+    // Clear any running cycle
+    if (cycleInterval) {
+        clearTimeout(cycleInterval);
+        cycleInterval = null;
+    }
+
+    // Reset and start again
+    const overlay = document.getElementById('revealOverlay');
+    overlay.classList.remove('active');
+
+    // Small delay before restarting
+    setTimeout(() => {
+        getRandomMovie();
+    }, 100);
 }
 
 function openTagModal(movieId, title) {
     currentMovieId = movieId;
     document.getElementById('modalTitle').textContent = `Tag: ${title}`;
-    
-    // Clear all checkboxes
+
     document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]').forEach(cb => {
         cb.checked = false;
     });
-    
-    // Load current tags
+
     fetch(`/api/movies/${movieId}/tags`)
         .then(response => response.json())
         .then(tags => {
@@ -120,7 +811,7 @@ function openTagModal(movieId, title) {
                 if (checkbox) checkbox.checked = true;
             });
         });
-    
+
     document.getElementById('tagModal').style.display = 'block';
 }
 
@@ -131,70 +822,63 @@ function closeTagModal() {
 
 function saveTags() {
     if (!currentMovieId) return;
-    
+
     const selectedCategories = [];
     document.querySelectorAll('#categoryCheckboxes input[type="checkbox"]:checked').forEach(cb => {
         selectedCategories.push(parseInt(cb.value));
     });
-    
+
     fetch(`/api/movies/${currentMovieId}/tags`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category_ids: selectedCategories })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            location.reload(); // Refresh to show updated tags
+            location.reload();
         }
     });
 }
 
-// Enhanced search with debouncing
+// Search with debouncing
 let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', function(e) {
     const searchTerm = e.target.value.toLowerCase().trim();
-    
-    // Clear previous timeout
+
     clearTimeout(searchTimeout);
-    
+
     if (searchTerm === '') {
-        // Show all movies if search is empty
         document.querySelectorAll('.movie-card').forEach(card => {
             card.style.display = 'block';
         });
         return;
     }
-    
-    // Debounce search
+
     searchTimeout = setTimeout(() => {
         document.querySelectorAll('.movie-card').forEach(card => {
             const title = card.dataset.title;
             card.style.display = title.includes(searchTerm) ? 'block' : 'none';
         });
-    }, 300);
+    }, 150);
 });
 
-// Close modals when clicking outside
+// Close modal when clicking outside
 document.getElementById('tagModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeTagModal();
-    }
+    if (e.target === this) closeTagModal();
 });
 
-// Add hover effects
-document.querySelectorAll('.movie-card').forEach(card => {
-    card.addEventListener('mouseenter', function() {
-        this.style.transform = 'translateY(-2px)';
-        this.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-    });
-    
-    card.addEventListener('mouseleave', function() {
-        this.style.transform = 'translateY(0)';
-        this.style.boxShadow = 'none';
-    });
+// Close reveal overlay when clicking outside
+document.getElementById('revealOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeReveal();
+});
+
+// Keyboard support
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeTagModal();
+        closeReveal();
+    }
 });
 </script>
 {% endblock %}
