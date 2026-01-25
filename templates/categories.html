@@ -1,57 +1,331 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-    <h2>Manage Categories</h2>
-    <button class="btn btn-primary" onclick="showCreateModal()">Add Category</button>
+<style>
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .categories-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1rem;
+    }
+
+    .category-card {
+        background: linear-gradient(145deg, var(--nord2) 0%, var(--nord1) 100%);
+        border: 1px solid var(--border-accent);
+        border-radius: 12px;
+        padding: 1.25rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s var(--transition-smooth);
+        opacity: 0;
+        transform: translateY(12px);
+        animation: cardReveal 0.4s var(--transition-smooth) forwards;
+    }
+
+    .category-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 4px;
+        background: var(--category-color, var(--frost2));
+    }
+
+    .category-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25), 0 0 15px rgba(136, 192, 208, 0.08);
+    }
+
+    .category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .category-info {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .category-color-badge {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: white;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .category-name {
+        font-family: 'Nunito', sans-serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--text-primary);
+    }
+
+    .category-actions {
+        display: flex;
+        gap: 0.4rem;
+        opacity: 0.7;
+        transition: opacity 0.25s var(--transition-smooth);
+    }
+
+    .category-card:hover .category-actions {
+        opacity: 1;
+    }
+
+    .weight-section {
+        background: var(--nord0);
+        border-radius: 8px;
+        padding: 0.875rem 1rem;
+    }
+
+    .weight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.6rem;
+    }
+
+    .weight-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+    }
+
+    .weight-value {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;
+        font-size: 1.15rem;
+        color: var(--frost2);
+    }
+
+    .weight-bar-track {
+        height: 6px;
+        background: var(--nord1);
+        border-radius: 3px;
+        overflow: hidden;
+        margin-bottom: 0.6rem;
+    }
+
+    .weight-bar {
+        height: 100%;
+        border-radius: 3px;
+        transition: width 0.4s var(--transition-smooth);
+        background: linear-gradient(90deg, var(--frost3), var(--frost2));
+    }
+
+    .weight-status {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+    }
+
+    .weight-status.high { color: var(--aurora-green); }
+    .weight-status.normal { color: var(--text-muted); }
+    .weight-status.low { color: var(--aurora-orange); }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-muted);
+        background: linear-gradient(145deg, var(--nord2) 0%, var(--nord1) 100%);
+        border: 1px dashed var(--border-accent);
+        border-radius: 16px;
+    }
+
+    .empty-state h3 {
+        font-family: 'Quicksand', sans-serif;
+        font-size: 1.4rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        margin-bottom: 1.25rem;
+    }
+
+    /* Modal form enhancements */
+    .color-preview {
+        display: flex;
+        align-items: center;
+        gap: 0.875rem;
+        margin-top: 0.5rem;
+    }
+
+    .color-swatch {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.25);
+    }
+
+    .color-hex {
+        font-family: monospace;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+    }
+
+    .weight-slider-container {
+        background: var(--nord0);
+        padding: 0.875rem 1rem;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+    }
+
+    .weight-display {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.6rem;
+    }
+
+    .weight-display-value {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;
+        font-size: 1.35rem;
+        color: var(--frost2);
+    }
+
+    .weight-display-hint {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+    }
+
+    input[type="range"] {
+        width: 100%;
+        height: 6px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: var(--nord1);
+        border-radius: 3px;
+        outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--frost2);
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        transition: transform 0.2s;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.15);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--frost2);
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+</style>
+
+<div class="page-header">
+    <h2>Categories</h2>
+    <button class="btn btn-primary" onclick="showCreateModal()">
+        <span style="font-size: 1.1rem;">+</span> Add Category
+    </button>
 </div>
 
-<div class="categories-grid" style="display: grid; gap: 1rem;">
+{% if categories %}
+<div class="categories-grid">
     {% for category in categories %}
-    <div class="category-card" style="background: white; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-            <div>
-                <span class="tag" style="background-color: {{ category.color }};">{{ category.name }}</span>
+    <div class="category-card" style="--category-color: {{ category.color }}; animation-delay: {{ loop.index0 * 40 }}ms;">
+        <div class="category-header">
+            <div class="category-info">
+                <div class="category-color-badge" style="background: {{ category.color }};">
+                    {{ category.name[0]|upper }}
+                </div>
+                <span class="category-name">{{ category.name }}</span>
             </div>
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <button class="btn btn-secondary" onclick="editCategory({{ category.id }}, '{{ category.name|replace("'", "\\'") }}', '{{ category.color }}', {{ category.weight|default(1.0) }})" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Edit</button>
-                <button class="btn btn-danger" onclick="deleteCategory({{ category.id }})" style="font-size: 0.75rem; padding: 0.25rem 0.5rem;">Delete</button>
+            <div class="category-actions">
+                <button class="btn btn-secondary btn-sm" onclick="editCategory({{ category.id }}, '{{ category.name|replace("'", "\\'") }}', '{{ category.color }}', {{ category.weight|default(1.0) }})">Edit</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteCategory({{ category.id }})">Delete</button>
             </div>
         </div>
-        <div style="display: flex; justify-content: between; align-items: center; font-size: 0.875rem; color: #64748b;">
-            <span>Weight: {{ "%.1f"|format(category.weight|default(1.0)) }}</span>
-            <span style="margin-left: auto;">
+
+        <div class="weight-section">
+            <div class="weight-header">
+                <span class="weight-label">Selection Weight</span>
+                <span class="weight-value">{{ "%.1f"|format(category.weight|default(1.0)) }}×</span>
+            </div>
+            <div class="weight-bar-track">
+                <div class="weight-bar" style="width: {{ [(category.weight|default(1.0) / 5 * 100)|int, 100]|min }}%;"></div>
+            </div>
+            <div class="weight-status {% if category.weight|default(1.0) > 1.0 %}high{% elif category.weight|default(1.0) < 1.0 %}low{% else %}normal{% endif %}">
                 {% if category.weight|default(1.0) > 1.0 %}
-                    📈 Higher chance
+                    ▲ Higher chance
                 {% elif category.weight|default(1.0) < 1.0 %}
-                    📉 Lower chance
+                    ▼ Lower chance
                 {% else %}
-                    ⚖️ Normal chance
+                    ● Standard
                 {% endif %}
-            </span>
+            </div>
         </div>
     </div>
     {% endfor %}
 </div>
+{% else %}
+<div class="empty-state">
+    <h3>No Categories Yet</h3>
+    <p>Create categories to organize your movie collection.</p>
+    <button class="btn btn-primary" onclick="showCreateModal()">Create Your First Category</button>
+</div>
+{% endif %}
 
 <!-- Create Category Modal -->
 <div id="createModal" class="modal">
     <div class="modal-content">
-        <h3>Create New Category</h3>
+        <h3>New Category</h3>
         <div class="form-group">
-            <label for="categoryName">Category Name:</label>
-            <input type="text" id="categoryName" placeholder="e.g., Action, Comedy">
+            <label for="categoryName">Category Name</label>
+            <input type="text" id="categoryName" placeholder="e.g., Action, Comedy, Drama">
         </div>
         <div class="form-group">
-            <label for="categoryColor">Color:</label>
-            <input type="color" id="categoryColor" value="#3b82f6">
+            <label>Color</label>
+            <input type="color" id="categoryColor" value="#88C0D0">
+            <div class="color-preview">
+                <div class="color-swatch" id="colorPreview" style="background: #88C0D0;"></div>
+                <span class="color-hex" id="colorHex">#88C0D0</span>
+            </div>
         </div>
         <div class="form-group">
-            <label for="categoryWeight">Weight (0.0 - 10.0):</label>
-            <input type="number" id="categoryWeight" value="1.0" min="0" max="10" step="0.1" style="width: 100%;">
-            <small style="color: #64748b; font-size: 0.75rem;">
-                Higher weights = more likely to be selected randomly. 1.0 = normal, 2.0 = twice as likely, 0.5 = half as likely
-            </small>
+            <label for="categoryWeight">Selection Weight</label>
+            <div class="weight-slider-container">
+                <div class="weight-display">
+                    <span class="weight-display-value" id="weightDisplay">1.0×</span>
+                    <span class="weight-display-hint" id="weightHint">Standard chance</span>
+                </div>
+                <input type="range" id="categoryWeight" value="1.0" min="0.1" max="5" step="0.1">
+            </div>
+            <small>Affects how often this category is picked during random selection</small>
         </div>
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
@@ -65,23 +339,31 @@
     <div class="modal-content">
         <h3>Edit Category</h3>
         <div class="form-group">
-            <label for="editCategoryName">Category Name:</label>
-            <input type="text" id="editCategoryName" placeholder="e.g., Action, Comedy">
+            <label for="editCategoryName">Category Name</label>
+            <input type="text" id="editCategoryName" placeholder="e.g., Action, Comedy, Drama">
         </div>
         <div class="form-group">
-            <label for="editCategoryColor">Color:</label>
+            <label>Color</label>
             <input type="color" id="editCategoryColor">
+            <div class="color-preview">
+                <div class="color-swatch" id="editColorPreview" style="background: #88C0D0;"></div>
+                <span class="color-hex" id="editColorHex">#88C0D0</span>
+            </div>
         </div>
         <div class="form-group">
-            <label for="editCategoryWeight">Weight (0.0 - 10.0):</label>
-            <input type="number" id="editCategoryWeight" min="0" max="10" step="0.1" style="width: 100%;">
-            <small style="color: #64748b; font-size: 0.75rem;">
-                Higher weights = more likely to be selected randomly. 1.0 = normal, 2.0 = twice as likely, 0.5 = half as likely
-            </small>
+            <label for="editCategoryWeight">Selection Weight</label>
+            <div class="weight-slider-container">
+                <div class="weight-display">
+                    <span class="weight-display-value" id="editWeightDisplay">1.0×</span>
+                    <span class="weight-display-hint" id="editWeightHint">Standard chance</span>
+                </div>
+                <input type="range" id="editCategoryWeight" min="0.1" max="5" step="0.1">
+            </div>
+            <small>Affects how often this category is picked during random selection</small>
         </div>
         <div class="modal-actions">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
-            <button class="btn btn-primary" onclick="updateCategory()">Update</button>
+            <button class="btn btn-primary" onclick="updateCategory()">Save Changes</button>
         </div>
     </div>
 </div>
@@ -89,9 +371,40 @@
 
 {% block scripts %}
 <script>
-console.log("Categories page scripts loaded");
-
 let currentEditingCategoryId = null;
+
+function getWeightHint(weight) {
+    if (weight >= 3) return 'Much higher chance';
+    if (weight >= 2) return 'Higher chance';
+    if (weight > 1) return 'Slightly higher';
+    if (weight === 1) return 'Standard chance';
+    if (weight >= 0.5) return 'Lower chance';
+    return 'Much lower chance';
+}
+
+// Color preview updates
+document.getElementById('categoryColor').addEventListener('input', function(e) {
+    document.getElementById('colorPreview').style.background = e.target.value;
+    document.getElementById('colorHex').textContent = e.target.value;
+});
+
+document.getElementById('editCategoryColor').addEventListener('input', function(e) {
+    document.getElementById('editColorPreview').style.background = e.target.value;
+    document.getElementById('editColorHex').textContent = e.target.value;
+});
+
+// Weight slider updates
+document.getElementById('categoryWeight').addEventListener('input', function(e) {
+    const val = parseFloat(e.target.value);
+    document.getElementById('weightDisplay').textContent = val.toFixed(1) + '×';
+    document.getElementById('weightHint').textContent = getWeightHint(val);
+});
+
+document.getElementById('editCategoryWeight').addEventListener('input', function(e) {
+    const val = parseFloat(e.target.value);
+    document.getElementById('editWeightDisplay').textContent = val.toFixed(1) + '×';
+    document.getElementById('editWeightHint').textContent = getWeightHint(val);
+});
 
 function showCreateModal() {
     document.getElementById('createModal').style.display = 'block';
@@ -100,15 +413,23 @@ function showCreateModal() {
 function closeCreateModal() {
     document.getElementById('createModal').style.display = 'none';
     document.getElementById('categoryName').value = '';
-    document.getElementById('categoryColor').value = '#3b82f6';
+    document.getElementById('categoryColor').value = '#88C0D0';
+    document.getElementById('colorPreview').style.background = '#88C0D0';
+    document.getElementById('colorHex').textContent = '#88C0D0';
     document.getElementById('categoryWeight').value = '1.0';
+    document.getElementById('weightDisplay').textContent = '1.0×';
+    document.getElementById('weightHint').textContent = 'Standard chance';
 }
 
 function editCategory(categoryId, name, color, weight) {
     currentEditingCategoryId = categoryId;
     document.getElementById('editCategoryName').value = name;
     document.getElementById('editCategoryColor').value = color;
+    document.getElementById('editColorPreview').style.background = color;
+    document.getElementById('editColorHex').textContent = color;
     document.getElementById('editCategoryWeight').value = weight;
+    document.getElementById('editWeightDisplay').textContent = weight.toFixed(1) + '×';
+    document.getElementById('editWeightHint').textContent = getWeightHint(weight);
     document.getElementById('editModal').style.display = 'block';
 }
 
@@ -121,22 +442,15 @@ function createCategory() {
     const name = document.getElementById('categoryName').value.trim();
     const color = document.getElementById('categoryColor').value;
     const weight = parseFloat(document.getElementById('categoryWeight').value);
-    
+
     if (!name) {
         alert('Please enter a category name');
         return;
     }
-    
-    if (weight < 0 || weight > 10) {
-        alert('Weight must be between 0.0 and 10.0');
-        return;
-    }
-    
+
     fetch('/api/categories', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, color, weight })
     })
     .then(response => response.json())
@@ -155,26 +469,19 @@ function createCategory() {
 
 function updateCategory() {
     if (!currentEditingCategoryId) return;
-    
+
     const name = document.getElementById('editCategoryName').value.trim();
     const color = document.getElementById('editCategoryColor').value;
     const weight = parseFloat(document.getElementById('editCategoryWeight').value);
-    
+
     if (!name) {
         alert('Please enter a category name');
         return;
     }
-    
-    if (weight < 0 || weight > 10) {
-        alert('Weight must be between 0.0 and 10.0');
-        return;
-    }
-    
+
     fetch(`/api/categories/${currentEditingCategoryId}`, {
         method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, color, weight })
     })
     .then(response => response.json())
@@ -192,30 +499,32 @@ function updateCategory() {
 }
 
 function deleteCategory(categoryId) {
-    if (!confirm('Are you sure? This will remove this category from all movies.')) {
+    if (!confirm('Delete this category? It will be removed from all movies.')) {
         return;
     }
-    
-    fetch(`/api/categories/${categoryId}`, {
-        method: 'DELETE'
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        }
-    });
+
+    fetch(`/api/categories/${categoryId}`, { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            }
+        });
 }
 
 // Close modals when clicking outside
 document.getElementById('createModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeCreateModal();
-    }
+    if (e.target === this) closeCreateModal();
 });
 
 document.getElementById('editModal').addEventListener('click', function(e) {
-    if (e.target === this) {
+    if (e.target === this) closeEditModal();
+});
+
+// Keyboard support
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeCreateModal();
         closeEditModal();
     }
 });
