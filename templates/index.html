@@ -294,10 +294,46 @@
         }
     }
 
+    .reveal-poster-container {
+        margin-bottom: 1.5rem;
+        perspective: 1000px;
+    }
+
+    .reveal-poster {
+        width: auto;
+        height: clamp(150px, 30vh, 300px);
+        border-radius: 8px;
+        box-shadow:
+            0 20px 60px rgba(0, 0, 0, 0.5),
+            0 0 40px rgba(136, 192, 208, 0.3);
+        transform: rotateY(0deg);
+        animation: posterReveal 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        opacity: 0;
+    }
+
+    @keyframes posterReveal {
+        0% {
+            opacity: 0;
+            transform: rotateY(-30deg) scale(0.8);
+        }
+        60% {
+            opacity: 1;
+            transform: rotateY(5deg) scale(1.05);
+        }
+        100% {
+            opacity: 1;
+            transform: rotateY(0deg) scale(1);
+        }
+    }
+
+    .reveal-poster-container.no-poster {
+        display: none;
+    }
+
     .reveal-title {
         font-family: 'Quicksand', sans-serif;
         font-weight: 700;
-        font-size: clamp(2rem, 8vw, 4.5rem);
+        font-size: clamp(1.5rem, 6vw, 3.5rem);
         color: var(--nord6);
         text-shadow: 0 0 60px var(--frost2), 0 0 100px rgba(136, 192, 208, 0.4);
         margin-bottom: 1.5rem;
@@ -429,6 +465,773 @@
             justify-content: center;
         }
     }
+
+    /* ========== Professional Video Store Experience ========== */
+    .videostore-container {
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        width: 100%;
+        max-width: 750px;
+        position: relative;
+    }
+
+    .videostore-container.active {
+        display: flex;
+        animation: storeEnter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes storeEnter {
+        0% {
+            opacity: 0;
+            transform: scale(0.9) translateY(20px);
+        }
+        100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+    }
+
+    /* Fluorescent ceiling light effect */
+    .store-ceiling-light {
+        position: absolute;
+        top: -60px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 20px;
+        background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 252, 240, 0.9) 20%,
+            rgba(255, 252, 240, 1) 50%,
+            rgba(255, 252, 240, 0.9) 80%,
+            transparent 100%);
+        border-radius: 4px;
+        box-shadow:
+            0 0 60px 30px rgba(255, 252, 240, 0.3),
+            0 0 100px 60px rgba(255, 250, 230, 0.15);
+        animation: fluorescentFlicker 8s ease-in-out infinite;
+    }
+
+    @keyframes fluorescentFlicker {
+        0%, 100% { opacity: 1; }
+        4% { opacity: 0.97; }
+        8% { opacity: 1; }
+        47% { opacity: 1; }
+        48% { opacity: 0.94; }
+        49% { opacity: 1; }
+        50% { opacity: 0.98; }
+        51% { opacity: 1; }
+    }
+
+    .store-header {
+        text-align: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .store-neon {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;
+        font-size: clamp(2rem, 7vw, 3.5rem);
+        color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+        position: relative;
+        text-shadow:
+            0 0 5px #fff,
+            0 0 10px #fff,
+            0 0 20px #ff00de,
+            0 0 40px #ff00de,
+            0 0 60px #ff00de,
+            0 0 80px #ff00de;
+        animation: neonPulse 2s ease-in-out infinite;
+    }
+
+    .store-neon::before {
+        content: 'VIDEO STORE';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(45deg, #ff00de, #00ffff, #ff00de);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        opacity: 0;
+        animation: neonColorShift 4s ease-in-out infinite;
+    }
+
+    @keyframes neonPulse {
+        0%, 100% {
+            filter: brightness(1);
+            text-shadow:
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #ff00de,
+                0 0 40px #ff00de,
+                0 0 60px #ff00de;
+        }
+        50% {
+            filter: brightness(1.2);
+            text-shadow:
+                0 0 10px #fff,
+                0 0 20px #fff,
+                0 0 30px #ff00de,
+                0 0 60px #ff00de,
+                0 0 80px #ff00de,
+                0 0 100px #ff00de;
+        }
+    }
+
+    @keyframes neonColorShift {
+        0%, 100% { opacity: 0; }
+        50% { opacity: 0.3; }
+    }
+
+    .store-tagline {
+        font-family: 'Nunito', sans-serif;
+        font-size: 1.1rem;
+        color: #88C0D0;
+        margin-top: 0.75rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        text-shadow: 0 0 20px rgba(136, 192, 208, 0.5);
+    }
+
+    /* Genre signs above shelf */
+    .genre-signs {
+        display: flex;
+        justify-content: space-around;
+        width: 100%;
+        margin-bottom: 0.75rem;
+        padding: 0 1rem;
+    }
+
+    .genre-sign {
+        font-family: 'Quicksand', sans-serif;
+        font-weight: 700;
+        font-size: 0.7rem;
+        color: #1a1a2e;
+        background: linear-gradient(180deg, #f5e6a3 0%, #d4a847 100%);
+        padding: 0.3rem 0.8rem;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        box-shadow:
+            0 2px 4px rgba(0,0,0,0.3),
+            inset 0 1px 0 rgba(255,255,255,0.5);
+        transform: perspective(100px) rotateX(5deg);
+    }
+
+    /* Video Wall - Wood panel styling */
+    .video-wall {
+        position: relative;
+        /* Realistic wood grain background */
+        background:
+            repeating-linear-gradient(
+                90deg,
+                transparent 0px,
+                transparent 2px,
+                rgba(0,0,0,0.03) 2px,
+                rgba(0,0,0,0.03) 4px
+            ),
+            repeating-linear-gradient(
+                0deg,
+                transparent 0px,
+                transparent 1px,
+                rgba(0,0,0,0.02) 1px,
+                rgba(0,0,0,0.02) 2px
+            ),
+            linear-gradient(180deg,
+                #5c3d2e 0%,
+                #4a3020 10%,
+                #3d2518 50%,
+                #2d1810 90%,
+                #1a0f0a 100%);
+        border: 6px solid;
+        border-image: linear-gradient(180deg, #6b4930 0%, #4a3020 50%, #2d1810 100%) 1;
+        border-radius: 4px;
+        padding: 1rem 1.25rem;
+        box-shadow:
+            inset 0 0 60px rgba(0, 0, 0, 0.4),
+            inset 0 -20px 40px rgba(0, 0, 0, 0.2),
+            0 10px 40px rgba(0, 0, 0, 0.5),
+            0 0 100px rgba(255, 250, 230, 0.05);
+        /* Subtle light reflection from fluorescent */
+        background-blend-mode: overlay;
+    }
+
+    .video-wall::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 30%;
+        background: linear-gradient(180deg,
+            rgba(255, 252, 240, 0.08) 0%,
+            transparent 100%);
+        pointer-events: none;
+        border-radius: 4px 4px 0 0;
+    }
+
+    .shelf {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        padding: 12px 0 16px 0;
+        position: relative;
+        /* Wood shelf with depth */
+        border-bottom: 12px solid;
+        border-image: linear-gradient(180deg,
+            #6b4930 0%,
+            #5c3d2e 30%,
+            #4a3020 60%,
+            #3d2518 100%) 1;
+        margin-bottom: 8px;
+    }
+
+    .shelf:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 8px;
+    }
+
+    /* Shelf edge highlight */
+    .shelf::before {
+        content: '';
+        position: absolute;
+        bottom: -12px;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255,255,255,0.15) 20%,
+            rgba(255,255,255,0.2) 50%,
+            rgba(255,255,255,0.15) 80%,
+            transparent 100%);
+    }
+
+    /* Shelf shadow underneath */
+    .shelf::after {
+        content: '';
+        position: absolute;
+        bottom: -20px;
+        left: 5%;
+        right: 5%;
+        height: 8px;
+        background: radial-gradient(ellipse at center,
+            rgba(0,0,0,0.3) 0%,
+            transparent 70%);
+    }
+
+    /* ========== 3D VHS Box with Movie Poster ========== */
+    .vhs-box {
+        width: 70px;
+        height: 100px;
+        position: relative;
+        cursor: pointer;
+        transform-style: preserve-3d;
+        perspective: 800px;
+        transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .vhs-case {
+        width: 100%;
+        height: 100%;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    /* Front cover with movie poster */
+    .vhs-front {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 3px;
+        overflow: hidden;
+        /* Plastic case effect */
+        box-shadow:
+            2px 4px 8px rgba(0,0,0,0.4),
+            inset 0 0 0 1px rgba(255,255,255,0.1);
+    }
+
+    .vhs-poster {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        /* Apply hue rotation for variety */
+        transition: filter 0.3s ease;
+    }
+
+    /* Plastic sheen overlay */
+    .vhs-front::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+            135deg,
+            rgba(255,255,255,0.2) 0%,
+            transparent 30%,
+            transparent 70%,
+            rgba(255,255,255,0.1) 100%
+        );
+        pointer-events: none;
+        z-index: 2;
+    }
+
+    /* VHS rental sticker */
+    .vhs-sticker {
+        position: absolute;
+        bottom: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(180deg, #fff9e6 0%, #fff 100%);
+        padding: 2px 6px;
+        border-radius: 2px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.5rem;
+        font-weight: bold;
+        color: #333;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        z-index: 3;
+        white-space: nowrap;
+        max-width: 90%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Genre/category color stripe */
+    .vhs-genre-stripe {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 8px;
+        height: 100%;
+        z-index: 3;
+        box-shadow: -1px 0 2px rgba(0,0,0,0.2);
+    }
+
+    /* Staff pick badge */
+    .vhs-badge {
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+        color: white;
+        font-family: 'Quicksand', sans-serif;
+        font-size: 0.4rem;
+        font-weight: 700;
+        padding: 2px 4px;
+        border-radius: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        z-index: 4;
+    }
+
+    /* "NEW" badge variation */
+    .vhs-badge.new-release {
+        background: linear-gradient(135deg, #00c853 0%, #00a844 100%);
+    }
+
+    /* VHS spine (side) */
+    .vhs-spine {
+        position: absolute;
+        width: 14px;
+        height: 100%;
+        left: -14px;
+        top: 0;
+        background: linear-gradient(90deg, #1a1a2e 0%, #2a2a4e 100%);
+        transform: rotateY(-90deg) translateZ(0px);
+        transform-origin: right center;
+        border-radius: 2px 0 0 2px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 4px 0;
+        box-shadow: inset 1px 0 2px rgba(255,255,255,0.1);
+    }
+
+    .vhs-spine-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.55rem;
+        font-weight: 600;
+        color: #e0e0e0;
+        text-align: center;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-height: 85px;
+    }
+
+    /* ========== VHS Box States ========== */
+    .vhs-box:hover .vhs-case {
+        transform: rotateY(-15deg) translateZ(10px) translateX(5px);
+    }
+
+    .vhs-box:hover .vhs-front::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(136, 192, 208, 0.1);
+        pointer-events: none;
+    }
+
+    .vhs-box.highlighted {
+        z-index: 50;
+    }
+
+    .vhs-box.highlighted .vhs-case {
+        transform: rotateY(-20deg) translateZ(20px) translateX(8px) scale(1.05);
+    }
+
+    .vhs-box.highlighted .vhs-front {
+        box-shadow:
+            0 0 20px rgba(136, 192, 208, 0.6),
+            0 0 40px rgba(136, 192, 208, 0.3),
+            4px 8px 16px rgba(0,0,0,0.4);
+    }
+
+    .vhs-box.selected {
+        z-index: 100;
+    }
+
+    .vhs-box.selected .vhs-case {
+        animation: vhsGrab 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes vhsGrab {
+        0% {
+            transform: rotateY(-20deg) translateZ(20px) translateX(8px) scale(1.05);
+        }
+        30% {
+            transform: rotateY(-10deg) translateZ(60px) translateY(-20px) scale(1.2);
+        }
+        60% {
+            transform: rotateY(5deg) translateZ(120px) translateY(-40px) scale(1.4);
+            opacity: 1;
+        }
+        100% {
+            transform: rotateY(0deg) translateZ(200px) translateY(-60px) scale(1.6);
+            opacity: 0;
+        }
+    }
+
+    /* ========== Improved Browsing Hand ========== */
+    .browsing-hand {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        pointer-events: none;
+        z-index: 100;
+        filter: drop-shadow(3px 6px 8px rgba(0,0,0,0.5));
+        opacity: 0;
+        /* Smooth animation via JS, not CSS transition */
+    }
+
+    .browsing-hand.active {
+        opacity: 1;
+        animation: handAppear 0.3s ease-out;
+    }
+
+    @keyframes handAppear {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+    }
+
+    .browsing-hand.reaching {
+        animation: handReach 0.3s ease-out forwards;
+    }
+
+    @keyframes handReach {
+        0% { transform: scale(1) rotate(0deg); }
+        50% { transform: scale(1.1) rotate(-5deg); }
+        100% { transform: scale(1.05) rotate(-3deg); }
+    }
+
+    .browsing-hand svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ========== CRT/VHS Reveal Effects ========== */
+    .vhs-static-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2500;
+        opacity: 0;
+        mix-blend-mode: overlay;
+    }
+
+    .vhs-static-overlay.active {
+        animation: staticBurst 0.5s ease-out;
+    }
+
+    @keyframes staticBurst {
+        0% { opacity: 0.8; }
+        100% { opacity: 0; }
+    }
+
+    .vhs-static-overlay canvas {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Scanlines overlay */
+    .scanlines {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2001;
+        opacity: 0;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.15) 0px,
+            rgba(0, 0, 0, 0.15) 1px,
+            transparent 1px,
+            transparent 2px
+        );
+        transition: opacity 0.3s ease;
+    }
+
+    .scanlines.active {
+        opacity: 1;
+    }
+
+    /* VHS tracking distortion */
+    .tracking-distortion {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2002;
+        opacity: 0;
+    }
+
+    .tracking-distortion.active {
+        animation: trackingGlitch 2s ease-out forwards;
+    }
+
+    @keyframes trackingGlitch {
+        0%, 100% { opacity: 0; }
+        5% {
+            opacity: 1;
+            transform: translateX(-5px);
+            filter: hue-rotate(90deg);
+        }
+        10% {
+            transform: translateX(3px);
+            filter: hue-rotate(0deg);
+        }
+        15% {
+            transform: translateX(-2px);
+            opacity: 0.5;
+        }
+        20% {
+            transform: translateX(0);
+            opacity: 0;
+        }
+    }
+
+    /* VCR loading effect */
+    .vcr-loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 300px;
+        height: 80px;
+        background: linear-gradient(180deg, #1a1a1a 0%, #0a0a0a 100%);
+        border: 3px solid #333;
+        border-radius: 8px;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow:
+            0 10px 40px rgba(0,0,0,0.5),
+            inset 0 1px 0 rgba(255,255,255,0.1);
+        z-index: 10;
+    }
+
+    .vcr-loading.active {
+        display: flex;
+        animation: vcrAppear 0.3s ease-out;
+    }
+
+    @keyframes vcrAppear {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+    }
+
+    .vcr-slot {
+        width: 200px;
+        height: 8px;
+        background: #000;
+        border: 1px solid #222;
+        border-radius: 2px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .vcr-tape {
+        position: absolute;
+        left: -100%;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, #1a1a2e 0%, #2a2a4e 50%, #1a1a2e 100%);
+        animation: tapeInsert 1s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        animation-delay: 0.3s;
+    }
+
+    @keyframes tapeInsert {
+        0% { left: -100%; }
+        60% { left: 10%; }
+        80% { left: 5%; }
+        100% { left: 0%; }
+    }
+
+    .vcr-text {
+        font-family: 'Courier New', monospace;
+        font-size: 0.75rem;
+        color: #00ff00;
+        margin-top: 12px;
+        text-shadow: 0 0 10px #00ff00;
+        animation: vcrTextBlink 0.5s ease-in-out infinite;
+    }
+
+    @keyframes vcrTextBlink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    /* ========== Mobile Responsive ========== */
+    @media (max-width: 600px) {
+        .videostore-container {
+            padding: 0.5rem;
+            max-width: 100%;
+        }
+
+        .store-neon {
+            font-size: 1.6rem;
+            letter-spacing: 0.1em;
+        }
+
+        .store-tagline {
+            font-size: 0.9rem;
+        }
+
+        .genre-signs {
+            display: none;
+        }
+
+        .video-wall {
+            padding: 0.75rem;
+        }
+
+        .shelf {
+            gap: 4px;
+            padding: 10px 0 14px 0;
+        }
+
+        .vhs-box {
+            width: 55px;
+            height: 78px;
+        }
+
+        .vhs-sticker {
+            font-size: 0.4rem;
+            padding: 1px 4px;
+        }
+
+        .vhs-badge {
+            font-size: 0.35rem;
+            padding: 1px 3px;
+        }
+
+        .vhs-genre-stripe {
+            width: 5px;
+        }
+
+        .vhs-spine {
+            width: 10px;
+            left: -10px;
+        }
+
+        .vhs-spine-title {
+            font-size: 0.45rem;
+            max-height: 60px;
+        }
+
+        .browsing-hand {
+            width: 60px;
+            height: 60px;
+        }
+
+        .store-ceiling-light {
+            top: -40px;
+            height: 15px;
+        }
+    }
+
+    @media (max-width: 400px) {
+        .vhs-box {
+            width: 45px;
+            height: 64px;
+        }
+
+        .shelf {
+            gap: 3px;
+        }
+
+        .vhs-sticker {
+            display: none;
+        }
+
+        .vhs-badge {
+            display: none;
+        }
+
+        .store-neon {
+            font-size: 1.3rem;
+        }
+    }
 </style>
 
 <div class="page-header">
@@ -445,6 +1248,7 @@
 <div class="movie-grid">
     {% for movie in movies %}
     <div class="movie-card" data-title="{{ movie.title|lower }}"
+         data-poster="{{ movie.poster_url or '' }}"
          style="animation-delay: {{ loop.index0 * 25 }}ms;"
          onclick="openTagModal({{ movie.id }}, '{{ movie.title|replace("'", "\\'") }}')">
         <div class="movie-header">
@@ -512,9 +1316,85 @@
             <line x1="17" y1="9" x2="23" y2="15"/>
         </svg>
     </button>
+
+    <!-- Video Store Experience -->
+    <div class="videostore-container" id="videostoreContainer">
+        <div class="store-ceiling-light"></div>
+        <div class="store-header">
+            <div class="store-neon">VIDEO STORE</div>
+            <div class="store-tagline">Pick Your Feature</div>
+        </div>
+        <div class="genre-signs">
+            <div class="genre-sign">New Releases</div>
+            <div class="genre-sign">Staff Picks</div>
+            <div class="genre-sign">Classics</div>
+        </div>
+        <div class="video-wall" id="videoWall">
+            <!-- Shelves generated dynamically by JavaScript -->
+        </div>
+        <div class="browsing-hand" id="browsingHand">
+            <!-- Improved reaching hand SVG with more detail -->
+            <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="skinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#f5d0b5"/>
+                        <stop offset="100%" style="stop-color:#e8b896"/>
+                    </linearGradient>
+                    <linearGradient id="skinShadow" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#e8b896"/>
+                        <stop offset="100%" style="stop-color:#d4a07a"/>
+                    </linearGradient>
+                </defs>
+                <g transform="rotate(-20, 40, 40)">
+                    <!-- Wrist/Arm -->
+                    <rect x="28" y="62" width="20" height="18" rx="4" fill="url(#skinShadow)"/>
+                    <!-- Palm -->
+                    <ellipse cx="38" cy="48" rx="16" ry="18" fill="url(#skinGrad)"/>
+                    <ellipse cx="38" cy="50" rx="13" ry="15" fill="url(#skinShadow)" opacity="0.3"/>
+                    <!-- Thumb -->
+                    <ellipse cx="20" cy="42" rx="5" ry="10" fill="url(#skinGrad)" transform="rotate(-30, 20, 42)"/>
+                    <!-- Index finger -->
+                    <rect x="26" y="8" width="7" height="30" rx="3.5" fill="url(#skinGrad)"/>
+                    <ellipse cx="29.5" cy="8" rx="3.5" ry="4" fill="url(#skinGrad)"/>
+                    <!-- Middle finger (longest) -->
+                    <rect x="35" y="4" width="7" height="34" rx="3.5" fill="url(#skinGrad)"/>
+                    <ellipse cx="38.5" cy="4" rx="3.5" ry="4" fill="url(#skinGrad)"/>
+                    <!-- Ring finger -->
+                    <rect x="44" y="7" width="7" height="30" rx="3.5" fill="url(#skinGrad)"/>
+                    <ellipse cx="47.5" cy="7" rx="3.5" ry="4" fill="url(#skinGrad)"/>
+                    <!-- Pinky finger -->
+                    <rect x="53" y="14" width="6" height="24" rx="3" fill="url(#skinGrad)"/>
+                    <ellipse cx="56" cy="14" rx="3" ry="3.5" fill="url(#skinGrad)"/>
+                    <!-- Finger creases/details -->
+                    <line x1="26" y1="22" x2="33" y2="22" stroke="#d4a07a" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="35" y1="20" x2="42" y2="20" stroke="#d4a07a" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="44" y1="21" x2="51" y2="21" stroke="#d4a07a" stroke-width="0.5" opacity="0.5"/>
+                    <line x1="53" y1="26" x2="59" y2="26" stroke="#d4a07a" stroke-width="0.5" opacity="0.5"/>
+                </g>
+            </svg>
+        </div>
+        <!-- VCR Loading Effect -->
+        <div class="vcr-loading" id="vcrLoading">
+            <div class="vcr-slot">
+                <div class="vcr-tape"></div>
+            </div>
+            <div class="vcr-text">LOADING...</div>
+        </div>
+    </div>
+
+    <!-- VHS Effects Overlays -->
+    <div class="scanlines" id="scanlines"></div>
+    <div class="tracking-distortion" id="trackingDistortion"></div>
+    <div class="vhs-static-overlay" id="vhsStatic">
+        <canvas id="staticCanvas"></canvas>
+    </div>
+
     <div class="reveal-container">
         <div class="reveal-spinner" id="revealSpinner"></div>
         <div class="reveal-result" id="revealResult">
+            <div class="reveal-poster-container" id="revealPosterContainer">
+                <img class="reveal-poster" id="revealPoster" src="" alt="">
+            </div>
             <h1 class="reveal-title" id="revealTitle"></h1>
             <div class="reveal-tags" id="revealTags"></div>
         </div>
@@ -546,7 +1426,7 @@ function getMovieTitles() {
     }).filter(t => t);
 }
 
-// ========== Audio System ==========
+// ========== Enhanced Audio System ==========
 function initAudioContext() {
     if (!audioContext) {
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -556,49 +1436,169 @@ function initAudioContext() {
     }
 }
 
+// Create a more realistic "plastic click" sound
 function playTickSound(pitch = 800) {
     if (!revealSoundEnabled || !audioContext) return;
 
+    // Main tone
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
 
-    oscillator.connect(gainNode);
+    // Add a noise burst for plastic texture
+    const noiseBuffer = createNoiseBuffer(0.03);
+    const noiseSource = audioContext.createBufferSource();
+    const noiseGain = audioContext.createGain();
+
+    noiseSource.buffer = noiseBuffer;
+    noiseSource.connect(noiseGain);
+    noiseGain.connect(audioContext.destination);
+
+    oscillator.connect(filter);
+    filter.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    oscillator.type = 'sine';
+    // Configure main tone
+    oscillator.type = 'triangle';
     oscillator.frequency.setValueAtTime(pitch, audioContext.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(pitch * 0.5, audioContext.currentTime + 0.05);
 
-    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.05);
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, audioContext.currentTime);
+
+    gainNode.gain.setValueAtTime(0.06, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.08);
+
+    // Noise burst for click texture
+    noiseGain.gain.setValueAtTime(0.03, audioContext.currentTime);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 0.02);
 
     oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.05);
+    oscillator.stop(audioContext.currentTime + 0.1);
+    noiseSource.start(audioContext.currentTime);
+    noiseSource.stop(audioContext.currentTime + 0.03);
 }
 
+// Create noise buffer for texture
+function createNoiseBuffer(duration) {
+    const sampleRate = audioContext.sampleRate;
+    const bufferSize = sampleRate * duration;
+    const buffer = audioContext.createBuffer(1, bufferSize, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    return buffer;
+}
+
+// VHS tape insertion sound
+function playVHSInsertSound() {
+    if (!revealSoundEnabled || !audioContext) return;
+
+    // Mechanical whir
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+
+    oscillator.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(80, audioContext.currentTime);
+    oscillator.frequency.linearRampToValueAtTime(120, audioContext.currentTime + 0.3);
+    oscillator.frequency.linearRampToValueAtTime(60, audioContext.currentTime + 0.8);
+
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(400, audioContext.currentTime);
+
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.04, audioContext.currentTime + 0.1);
+    gainNode.gain.setValueAtTime(0.04, audioContext.currentTime + 0.6);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + 1);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 1);
+
+    // Click at the end
+    setTimeout(() => {
+        playTickSound(200);
+    }, 700);
+}
+
+// Enhanced reveal sound - triumphant fanfare
 function playRevealSound() {
     if (!revealSoundEnabled || !audioContext) return;
 
-    // Create a pleasant chime/ding sound
-    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 (C major chord)
+    // Ascending arpeggio with richer harmonics
+    const notes = [
+        { freq: 261.63, delay: 0 },      // C4
+        { freq: 329.63, delay: 0.08 },   // E4
+        { freq: 392.00, delay: 0.16 },   // G4
+        { freq: 523.25, delay: 0.24 },   // C5
+        { freq: 659.25, delay: 0.35 },   // E5
+        { freq: 783.99, delay: 0.50 },   // G5
+    ];
 
-    frequencies.forEach((freq, i) => {
+    notes.forEach(note => {
         const oscillator = audioContext.createOscillator();
+        const oscillator2 = audioContext.createOscillator();
         const gainNode = audioContext.createGain();
+        const filter = audioContext.createBiquadFilter();
 
         oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
+        oscillator2.connect(gainNode);
+        gainNode.connect(filter);
+        filter.connect(audioContext.destination);
 
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+        oscillator2.type = 'triangle';
+        oscillator.frequency.setValueAtTime(note.freq, audioContext.currentTime);
+        oscillator2.frequency.setValueAtTime(note.freq * 2, audioContext.currentTime); // Octave up
 
-        const startTime = audioContext.currentTime + (i * 0.08);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(3000, audioContext.currentTime);
+
+        const startTime = audioContext.currentTime + note.delay;
+        const duration = 1.2 - note.delay;
+
         gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.8);
+        gainNode.gain.linearRampToValueAtTime(0.12, startTime + 0.02);
+        gainNode.gain.setValueAtTime(0.1, startTime + 0.1);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
         oscillator.start(startTime);
-        oscillator.stop(startTime + 0.8);
+        oscillator.stop(startTime + duration);
+        oscillator2.start(startTime);
+        oscillator2.stop(startTime + duration);
     });
+}
+
+// VHS static/noise sound
+function playStaticSound(duration = 0.3) {
+    if (!revealSoundEnabled || !audioContext) return;
+
+    const noiseBuffer = createNoiseBuffer(duration);
+    const noiseSource = audioContext.createBufferSource();
+    const gainNode = audioContext.createGain();
+    const filter = audioContext.createBiquadFilter();
+
+    noiseSource.buffer = noiseBuffer;
+    noiseSource.connect(filter);
+    filter.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    filter.type = 'bandpass';
+    filter.frequency.setValueAtTime(1000, audioContext.currentTime);
+    filter.Q.setValueAtTime(0.5, audioContext.currentTime);
+
+    gainNode.gain.setValueAtTime(0.08, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + duration);
+
+    noiseSource.start(audioContext.currentTime);
+    noiseSource.stop(audioContext.currentTime + duration);
 }
 
 function toggleRevealSound() {
@@ -637,11 +1637,486 @@ function createParticleBurst() {
     }
 }
 
+// ========== Video Store System ==========
+let videostoreState = {
+    phase: 'idle',
+    displayedMovies: [],
+    currentHighlightIndex: -1,
+    browsingTimeout: null,
+    handPosition: { x: 0, y: 0 },
+    handTargetPosition: { x: 0, y: 0 },
+    handAnimationFrame: null
+};
+
+// Placeholder movie poster path
+const PLACEHOLDER_POSTER = '/static/placeholder_movie_poster.jpg';
+
+// Hue rotations for visual variety (in degrees) - used for placeholder posters only
+const HUE_ROTATIONS = [0, 30, 60, 120, 180, 210, 270, 300, 330, 45, 90, 150, 240, 285, 315];
+
+// Get all movies with their data from the page
+function getAllMoviesData() {
+    const cards = document.querySelectorAll('.movie-card');
+    return Array.from(cards).map(card => {
+        const titleEl = card.querySelector('.movie-title');
+        const tagsEl = card.querySelector('.movie-tags');
+        const tags = Array.from(tagsEl.querySelectorAll('.tag'));
+        const posterUrl = card.dataset.poster || '';
+
+        return {
+            title: titleEl ? titleEl.textContent.trim() : '',
+            color: tags.length > 0 ? tags[0].style.backgroundColor : '#5E81AC',
+            posterUrl: posterUrl,
+            year: ''
+        };
+    }).filter(m => m.title);
+}
+
+// Create a single 3D VHS box element with movie poster
+function createVHSBox(movie, index) {
+    const box = document.createElement('div');
+    box.className = 'vhs-box';
+    box.dataset.index = index;
+
+    const vhsCase = document.createElement('div');
+    vhsCase.className = 'vhs-case';
+
+    // Front face with movie poster
+    const front = document.createElement('div');
+    front.className = 'vhs-front';
+
+    // Movie poster image - use real poster if available, otherwise placeholder with hue rotation
+    const poster = document.createElement('img');
+    poster.className = 'vhs-poster';
+    poster.alt = movie.title;
+    poster.loading = 'lazy';
+
+    if (movie.posterUrl) {
+        // Use real movie poster - no filter needed
+        poster.src = movie.posterUrl;
+    } else {
+        // Use placeholder with hue rotation for variety
+        poster.src = PLACEHOLDER_POSTER;
+        const hueRotation = HUE_ROTATIONS[index % HUE_ROTATIONS.length];
+        const saturationBoost = 0.9 + (Math.random() * 0.4); // 0.9-1.3
+        const brightnessAdjust = 0.85 + (Math.random() * 0.3); // 0.85-1.15
+        poster.style.filter = `hue-rotate(${hueRotation}deg) saturate(${saturationBoost}) brightness(${brightnessAdjust})`;
+    }
+
+    front.appendChild(poster);
+    vhsCase.appendChild(front);
+
+    // Spine (visible when tilted)
+    const spine = document.createElement('div');
+    spine.className = 'vhs-spine';
+
+    const spineTitle = document.createElement('div');
+    spineTitle.className = 'vhs-spine-title';
+    spineTitle.textContent = movie.title;
+    spine.appendChild(spineTitle);
+
+    vhsCase.appendChild(spine);
+    box.appendChild(vhsCase);
+
+    return box;
+}
+
+// Generate the video wall with shelves
+function generateVideoWall(movies) {
+    const videoWall = document.getElementById('videoWall');
+    videoWall.innerHTML = '';
+
+    // Determine boxes per shelf based on screen width
+    const screenWidth = window.innerWidth;
+    let boxesPerShelf = 8;
+    if (screenWidth <= 400) boxesPerShelf = 5;
+    else if (screenWidth <= 600) boxesPerShelf = 6;
+
+    const numShelves = 3;
+    const totalBoxes = numShelves * boxesPerShelf;
+
+    // Shuffle movies and repeat if needed to fill all boxes
+    let displayMovies = [...movies];
+    while (displayMovies.length < totalBoxes) {
+        displayMovies = displayMovies.concat([...movies]);
+    }
+    // Shuffle
+    for (let i = displayMovies.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [displayMovies[i], displayMovies[j]] = [displayMovies[j], displayMovies[i]];
+    }
+    displayMovies = displayMovies.slice(0, totalBoxes);
+    videostoreState.displayedMovies = displayMovies;
+
+    let boxIndex = 0;
+    for (let s = 0; s < numShelves; s++) {
+        const shelf = document.createElement('div');
+        shelf.className = 'shelf';
+
+        for (let b = 0; b < boxesPerShelf; b++) {
+            const movie = displayMovies[boxIndex];
+            const box = createVHSBox(movie, boxIndex);
+            shelf.appendChild(box);
+            boxIndex++;
+        }
+
+        videoWall.appendChild(shelf);
+    }
+
+    return totalBoxes;
+}
+
+// Generate a smooth browsing path that ends at the selected movie
+function generateBrowsingPath(totalBoxes, finalIndex) {
+    const path = [];
+
+    // Get shelf layout info
+    const screenWidth = window.innerWidth;
+    let boxesPerShelf = 8;
+    if (screenWidth <= 400) boxesPerShelf = 5;
+    else if (screenWidth <= 600) boxesPerShelf = 6;
+
+    const numShelves = 3;
+
+    // Convert final index to shelf and position
+    const finalShelf = Math.floor(finalIndex / boxesPerShelf);
+    const finalPos = finalIndex % boxesPerShelf;
+
+    // Start from a random position on shelf 0 or 1
+    let currentShelf = Math.floor(Math.random() * 2);
+    let currentPos = Math.floor(Math.random() * boxesPerShelf);
+
+    // Browse naturally: move along shelves, occasionally changing shelves
+    // until we reach the final movie
+    const maxSteps = 15;
+
+    for (let step = 0; step < maxSteps; step++) {
+        const currentIndex = currentShelf * boxesPerShelf + currentPos;
+        path.push(currentIndex);
+
+        // Check if we're close to the target (save last few steps for approach)
+        const stepsRemaining = maxSteps - step;
+
+        if (stepsRemaining <= 3) {
+            // Move toward the final position
+            if (currentShelf !== finalShelf) {
+                currentShelf += (finalShelf > currentShelf) ? 1 : -1;
+            } else if (currentPos !== finalPos) {
+                currentPos += (finalPos > currentPos) ? 1 : -1;
+            }
+        } else {
+            // Natural browsing - mostly horizontal movement with occasional shelf changes
+            const moveType = Math.random();
+
+            if (moveType < 0.7) {
+                // Move horizontally (most common)
+                const direction = Math.random() < 0.5 ? -1 : 1;
+                currentPos = Math.max(0, Math.min(boxesPerShelf - 1, currentPos + direction));
+            } else if (moveType < 0.9) {
+                // Move to adjacent shelf
+                const direction = Math.random() < 0.5 ? -1 : 1;
+                currentShelf = Math.max(0, Math.min(numShelves - 1, currentShelf + direction));
+            }
+            // 10% chance to stay in place (pause)
+        }
+    }
+
+    // Ensure final position is the selected movie
+    path.push(finalIndex);
+
+    return path;
+}
+
+// Smooth hand animation using requestAnimationFrame
+function startSmoothHandAnimation() {
+    const hand = document.getElementById('browsingHand');
+
+    function animate() {
+        // Gentler interpolation for smooth gliding motion
+        const ease = 0.06; // Slower easing for more graceful movement
+        videostoreState.handPosition.x += (videostoreState.handTargetPosition.x - videostoreState.handPosition.x) * ease;
+        videostoreState.handPosition.y += (videostoreState.handTargetPosition.y - videostoreState.handPosition.y) * ease;
+
+        hand.style.left = `${videostoreState.handPosition.x}px`;
+        hand.style.top = `${videostoreState.handPosition.y}px`;
+
+        videostoreState.handAnimationFrame = requestAnimationFrame(animate);
+    }
+
+    animate();
+}
+
+function stopSmoothHandAnimation() {
+    if (videostoreState.handAnimationFrame) {
+        cancelAnimationFrame(videostoreState.handAnimationFrame);
+        videostoreState.handAnimationFrame = null;
+    }
+}
+
+// Set hand target position near a VHS box
+function setHandTarget(boxElement) {
+    const hand = document.getElementById('browsingHand');
+    const videoWall = document.getElementById('videoWall');
+    const wallRect = videoWall.getBoundingClientRect();
+    const boxRect = boxElement.getBoundingClientRect();
+
+    // Position hand to point at the box
+    const handX = boxRect.left - wallRect.left + boxRect.width / 2 - 30;
+    const handY = boxRect.top - wallRect.top + boxRect.height - 20;
+
+    videostoreState.handTargetPosition = { x: handX, y: handY };
+}
+
+// Initialize hand position
+function initHandPosition(firstBox) {
+    const videoWall = document.getElementById('videoWall');
+    const wallRect = videoWall.getBoundingClientRect();
+    const boxRect = firstBox.getBoundingClientRect();
+
+    const startX = boxRect.left - wallRect.left + boxRect.width / 2 - 30;
+    const startY = wallRect.height + 40; // Start below the wall
+
+    videostoreState.handPosition = { x: startX, y: startY };
+    videostoreState.handTargetPosition = { x: startX, y: startY };
+}
+
+// Animate hand along the browsing path with smooth, gentle movement
+function animateHandAlongPath(path, onComplete) {
+    const boxes = document.querySelectorAll('.vhs-box');
+    const hand = document.getElementById('browsingHand');
+
+    // Initialize hand position
+    if (boxes[path[0]]) {
+        initHandPosition(boxes[path[0]]);
+    }
+
+    hand.classList.add('active');
+    startSmoothHandAnimation();
+
+    let currentStep = 0;
+    const totalSteps = path.length;
+
+    // Gentle, relaxed timing - slower overall with natural variation
+    function getDelay(step) {
+        const progress = step / totalSteps;
+        // Base delay is longer, with gentle slowdown toward the end
+        const baseDelay = 400 + (progress * 300); // 400ms -> 700ms
+        const variation = Math.random() * 150 - 75; // +/- 75ms variation
+
+        // Extra pause near the end for anticipation
+        if (progress > 0.85) {
+            return baseDelay + 400 + variation;
+        }
+
+        return baseDelay + variation;
+    }
+
+    function step() {
+        // Clear previous highlight
+        boxes.forEach(b => b.classList.remove('highlighted'));
+
+        const boxIndex = path[currentStep];
+        const box = boxes[boxIndex];
+
+        if (box) {
+            box.classList.add('highlighted');
+            setHandTarget(box);
+
+            // Softer, less frequent tick sounds
+            if (currentStep % 2 === 0 || currentStep >= totalSteps - 3) {
+                const pitch = 500 + (currentStep / totalSteps) * 200 + Math.random() * 50;
+                playTickSound(pitch);
+            }
+
+            // Add reaching animation near the end
+            if (currentStep === totalSteps - 1) {
+                hand.classList.add('reaching');
+            }
+        }
+
+        currentStep++;
+
+        if (currentStep < totalSteps) {
+            videostoreState.browsingTimeout = setTimeout(step, getDelay(currentStep));
+        } else {
+            // Final selection with dramatic pause
+            setTimeout(() => {
+                if (box) {
+                    selectFinalMovie(box);
+                }
+                // Stop smooth animation
+                stopSmoothHandAnimation();
+                onComplete();
+            }, 600);
+        }
+    }
+
+    // Start after a moment for the hand to appear
+    setTimeout(step, 500);
+}
+
+// Handle final movie selection animation
+function selectFinalMovie(boxElement) {
+    const hand = document.getElementById('browsingHand');
+
+    // Play selection sound (ascending arpeggio)
+    playSelectionSound();
+
+    // Add selected class for pull-out animation
+    boxElement.classList.add('selected');
+
+    // Hide hand
+    hand.classList.remove('active');
+}
+
+// Play ascending arpeggio for selection
+function playSelectionSound() {
+    if (!revealSoundEnabled || !audioContext) return;
+
+    const frequencies = [392, 493.88, 587.33, 783.99]; // G4, B4, D5, G5
+
+    frequencies.forEach((freq, i) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+
+        const startTime = audioContext.currentTime + (i * 0.1);
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.12, startTime + 0.02);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.5);
+    });
+}
+
+// ========== VHS Visual Effects ==========
+function initStaticCanvas() {
+    const canvas = document.getElementById('staticCanvas');
+    if (!canvas) return;
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+function drawStatic() {
+    const canvas = document.getElementById('staticCanvas');
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const imageData = ctx.createImageData(canvas.width, canvas.height);
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const value = Math.random() * 255;
+        data[i] = value;     // R
+        data[i + 1] = value; // G
+        data[i + 2] = value; // B
+        data[i + 3] = Math.random() * 100; // A (semi-transparent)
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+}
+
+function playStaticEffect() {
+    const staticOverlay = document.getElementById('vhsStatic');
+    initStaticCanvas();
+
+    let frames = 0;
+    const maxFrames = 15;
+
+    function animateStatic() {
+        drawStatic();
+        frames++;
+
+        if (frames < maxFrames) {
+            requestAnimationFrame(animateStatic);
+        }
+    }
+
+    staticOverlay.classList.add('active');
+    playStaticSound(0.3);
+    animateStatic();
+
+    setTimeout(() => {
+        staticOverlay.classList.remove('active');
+    }, 500);
+}
+
+function showScanlines(show = true) {
+    const scanlines = document.getElementById('scanlines');
+    if (show) {
+        scanlines.classList.add('active');
+    } else {
+        scanlines.classList.remove('active');
+    }
+}
+
+function playTrackingDistortion() {
+    const tracking = document.getElementById('trackingDistortion');
+    tracking.classList.add('active');
+
+    setTimeout(() => {
+        tracking.classList.remove('active');
+    }, 2000);
+}
+
+function showVCRLoading(show = true) {
+    const vcr = document.getElementById('vcrLoading');
+    if (show) {
+        vcr.classList.add('active');
+        playVHSInsertSound();
+    } else {
+        vcr.classList.remove('active');
+    }
+}
+
+// Clean up video store state
+function resetVideoStore() {
+    const container = document.getElementById('videostoreContainer');
+    const hand = document.getElementById('browsingHand');
+    const boxes = document.querySelectorAll('.vhs-box');
+    const videoWall = document.getElementById('videoWall');
+    const storeHeader = document.querySelector('.store-header');
+    const genreSigns = document.querySelector('.genre-signs');
+
+    container.classList.remove('active');
+    hand.classList.remove('active', 'reaching');
+    boxes.forEach(b => {
+        b.classList.remove('highlighted', 'selected');
+    });
+
+    // Reset opacity for elements that may have been faded
+    if (videoWall) videoWall.style.opacity = '1';
+    if (storeHeader) storeHeader.style.opacity = '1';
+    if (genreSigns) genreSigns.style.opacity = '1';
+
+    // Stop smooth hand animation
+    stopSmoothHandAnimation();
+
+    // Hide VCR and effects
+    showVCRLoading(false);
+    showScanlines(false);
+
+    if (videostoreState.browsingTimeout) {
+        clearTimeout(videostoreState.browsingTimeout);
+        videostoreState.browsingTimeout = null;
+    }
+
+    videostoreState.phase = 'idle';
+    videostoreState.currentHighlightIndex = -1;
+}
+
 // ========== Reveal Animation ==========
 async function getRandomMovie() {
-    const titles = getMovieTitles();
+    const movies = getAllMoviesData();
 
-    if (titles.length === 0) {
+    if (movies.length === 0) {
         alert('No movies available. Please add some movies first!');
         return;
     }
@@ -649,21 +2124,28 @@ async function getRandomMovie() {
     // Initialize audio on user interaction
     initAudioContext();
 
-    // Show overlay immediately
+    // Reset any previous state
+    resetVideoStore();
+
+    // Show overlay and video store
     const overlay = document.getElementById('revealOverlay');
+    const videostoreContainer = document.getElementById('videostoreContainer');
     const spinner = document.getElementById('revealSpinner');
     const result = document.getElementById('revealResult');
     const actions = document.getElementById('revealActions');
     const particles = document.getElementById('revealParticles');
 
     overlay.classList.add('active');
-    spinner.style.display = 'block';
-    spinner.classList.add('cycling');
+    videostoreContainer.classList.add('active');
+    spinner.style.display = 'none';
     result.classList.remove('visible');
     actions.classList.remove('visible');
     particles.innerHTML = '';
 
-    // Fetch the actual random movie
+    // Hide VCR loading initially
+    showVCRLoading(false);
+
+    // Fetch the actual random movie from API
     try {
         const response = await fetch('/api/movies/random?exclude_untagged=true&use_weights=true');
         if (!response.ok) {
@@ -673,6 +2155,7 @@ async function getRandomMovie() {
     } catch (error) {
         console.error('Error:', error);
         overlay.classList.remove('active');
+        videostoreContainer.classList.remove('active');
         if (error.message.includes('404')) {
             alert('No tagged movies found. Please tag some movies first!');
         } else {
@@ -681,50 +2164,77 @@ async function getRandomMovie() {
         return;
     }
 
-    // Start cycling animation
-    let cycleCount = 0;
-    const totalCycles = 25;
-    let currentDelay = 60;
+    // Generate the video wall
+    const totalBoxes = generateVideoWall(movies);
 
-    function cycle() {
-        cycleCount++;
+    // Find or place the selected movie in the wall
+    let finalIndex = videostoreState.displayedMovies.findIndex(
+        m => m.title === selectedMovie.title
+    );
 
-        // Pick a random title (not the final one until the end)
-        let randomTitle;
-        if (cycleCount < totalCycles) {
-            do {
-                randomTitle = titles[Math.floor(Math.random() * titles.length)];
-            } while (randomTitle === selectedMovie.title && titles.length > 1);
-        } else {
-            randomTitle = selectedMovie.title;
-        }
+    // If not found, replace a random box with the selected movie
+    if (finalIndex === -1) {
+        finalIndex = Math.floor(Math.random() * totalBoxes);
+        videostoreState.displayedMovies[finalIndex] = {
+            title: selectedMovie.title,
+            color: selectedMovie.category_colors ?
+                selectedMovie.category_colors.split(',')[0] : '#5E81AC',
+            posterUrl: selectedMovie.poster_url || '',
+            year: ''
+        };
 
-        spinner.textContent = randomTitle;
-        playTickSound(600 + Math.random() * 400);
-
-        if (cycleCount < totalCycles) {
-            // Increase delay as we slow down (after first half)
-            if (cycleCount > totalCycles * 0.5) {
-                spinner.classList.remove('cycling');
-                spinner.classList.add('slowing');
-                currentDelay += 15;
-            }
-            cycleInterval = setTimeout(cycle, currentDelay);
-        } else {
-            // Final reveal
-            setTimeout(() => {
-                revealFinalMovie();
-            }, 300);
+        // Re-render that specific box
+        const boxes = document.querySelectorAll('.vhs-box');
+        if (boxes[finalIndex]) {
+            const newBox = createVHSBox(videostoreState.displayedMovies[finalIndex], finalIndex);
+            boxes[finalIndex].replaceWith(newBox);
         }
     }
 
-    // Start cycling
-    cycle();
+    // Generate browsing path and start animation
+    const path = generateBrowsingPath(totalBoxes, finalIndex);
+
+    videostoreState.phase = 'browsing';
+
+    // Start the browsing animation after a brief delay for the wall to render
+    setTimeout(() => {
+        animateHandAlongPath(path, () => {
+            // After hand animation completes, show VCR loading
+            videostoreState.phase = 'loading';
+
+            setTimeout(() => {
+                // Hide video store, show VCR
+                document.getElementById('videoWall').style.opacity = '0';
+                document.getElementById('browsingHand').classList.remove('active');
+                document.querySelector('.store-header').style.opacity = '0';
+                document.querySelector('.genre-signs').style.opacity = '0';
+
+                showVCRLoading(true);
+
+                // After VCR animation, transition to reveal
+                setTimeout(() => {
+                    showVCRLoading(false);
+                    videostoreContainer.classList.remove('active');
+
+                    // Play static effect during transition
+                    playStaticEffect();
+                    showScanlines(true);
+
+                    setTimeout(() => {
+                        playTrackingDistortion();
+                        revealFinalMovie();
+                    }, 300);
+                }, 1500);
+            }, 400);
+        });
+    }, 600);
 }
 
 function revealFinalMovie() {
     const spinner = document.getElementById('revealSpinner');
     const result = document.getElementById('revealResult');
+    const posterContainer = document.getElementById('revealPosterContainer');
+    const poster = document.getElementById('revealPoster');
     const title = document.getElementById('revealTitle');
     const tags = document.getElementById('revealTags');
     const actions = document.getElementById('revealActions');
@@ -732,6 +2242,15 @@ function revealFinalMovie() {
     // Hide spinner
     spinner.style.display = 'none';
     spinner.classList.remove('cycling', 'slowing');
+
+    // Set up poster
+    if (selectedMovie.poster_url) {
+        poster.src = selectedMovie.poster_url;
+        poster.alt = selectedMovie.title;
+        posterContainer.classList.remove('no-poster');
+    } else {
+        posterContainer.classList.add('no-poster');
+    }
 
     // Set up result
     title.textContent = selectedMovie.title;
@@ -746,7 +2265,7 @@ function revealFinalMovie() {
             const tag = document.createElement('span');
             tag.className = 'tag';
             tag.style.backgroundColor = colors[i] || '#5E81AC';
-            tag.style.animationDelay = `${0.2 + i * 0.1}s`;
+            tag.style.animationDelay = `${0.3 + i * 0.15}s`;
             tag.textContent = name.trim();
             tags.appendChild(tag);
         });
@@ -759,10 +2278,15 @@ function revealFinalMovie() {
     playRevealSound();
     createParticleBurst();
 
+    // Fade out scanlines gradually
+    setTimeout(() => {
+        showScanlines(false);
+    }, 1500);
+
     // Show actions after a moment
     setTimeout(() => {
         actions.classList.add('visible');
-    }, 600);
+    }, 800);
 }
 
 function closeReveal() {
@@ -775,6 +2299,12 @@ function closeReveal() {
         cycleInterval = null;
     }
 
+    // Hide scanlines and effects
+    showScanlines(false);
+
+    // Reset video store state
+    resetVideoStore();
+
     selectedMovie = null;
 }
 
@@ -785,9 +2315,14 @@ function pickAgain() {
         cycleInterval = null;
     }
 
-    // Reset and start again
-    const overlay = document.getElementById('revealOverlay');
-    overlay.classList.remove('active');
+    // Reset video store state
+    resetVideoStore();
+
+    // Reset result display
+    const result = document.getElementById('revealResult');
+    const actions = document.getElementById('revealActions');
+    result.classList.remove('visible');
+    actions.classList.remove('visible');
 
     // Small delay before restarting
     setTimeout(() => {
