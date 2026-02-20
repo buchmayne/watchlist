@@ -26,8 +26,8 @@ app = FastAPI(title="Movie Tagger", description="Tag and organize your movie col
 # Setup templates
 templates = Jinja2Templates(directory="templates")
 
-# Mount static files from root directory for placeholder images
-app.mount("/static", StaticFiles(directory="."), name="static")
+# Mount static files directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Database setup
 DATABASE = 'movies.db'

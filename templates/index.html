@@ -466,7 +466,27 @@
         }
     }
 
-    /* ========== Professional Video Store Experience ========== */
+    /* ========== 3D WebGL Video Store ========== */
+    .videostore-3d-container {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+
+    .videostore-3d-container.active {
+        display: block;
+    }
+
+    .videostore-3d-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* ========== Professional Video Store Experience (CSS Fallback) ========== */
     .videostore-container {
         display: none;
         flex-direction: column;
@@ -1317,7 +1337,10 @@
         </svg>
     </button>
 
-    <!-- Video Store Experience -->
+    <!-- 3D WebGL Video Store (Photorealistic) -->
+    <div class="videostore-3d-container" id="videostore3dContainer"></div>
+
+    <!-- Video Store Experience (CSS Fallback) -->
     <div class="videostore-container" id="videostoreContainer">
         <div class="store-ceiling-light"></div>
         <div class="store-header">
@@ -1416,6 +1439,74 @@ let revealSoundEnabled = true;
 let audioContext = null;
 let selectedMovie = null;
 let cycleInterval = null;
+
+// ========== 3D Video Store State ==========
+let videoStore3D = null;
+let use3DVideoStore = false;
+let is3DInitialized = false;
+let is3DInitializing = false;
+
+// ========== WebGL Detection ==========
+function hasWebGLSupport() {
+    try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        return !!gl;
+    } catch (e) {
+        return false;
+    }
+}
+
+// Check for WebGL support on load
+use3DVideoStore = hasWebGLSupport();
+console.log('WebGL support:', use3DVideoStore ? 'enabled' : 'disabled (using CSS fallback)');
+
+// ========== 3D Video Store Initialization ==========
+async function init3DVideoStore() {
+    if (is3DInitialized || is3DInitializing || !use3DVideoStore) return false;
+
+    is3DInitializing = true;
+    const container = document.getElementById('videostore3dContainer');
+
+    try {
+        // Check if VideoStore3D is available (loaded via script tag)
+        if (typeof window.VideoStore3D === 'undefined') {
+            // Load the script if not already loaded
+            await new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = '/static/3d/js/videostore-3d.js';
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+
+        videoStore3D = new window.VideoStore3D(container);
+
+        // Connect sound callbacks
+        videoStore3D.onTickSound = (pitch) => playTickSound(pitch);
+        videoStore3D.onSelectionSound = () => playSelectionSound();
+        videoStore3D.audioContext = audioContext;
+        videoStore3D.soundEnabled = revealSoundEnabled;
+
+        await videoStore3D.init();
+        videoStore3D.start();
+
+        is3DInitialized = true;
+        is3DInitializing = false;
+
+        console.log('3D Video Store initialized successfully');
+        return true;
+    } catch (error) {
+        console.error('Failed to initialize 3D Video Store:', error);
+        use3DVideoStore = false;
+        is3DInitializing = false;
+
+        // Hide 3D container, will fall back to CSS
+        container.style.display = 'none';
+        return false;
+    }
+}
 
 // Get all movie titles from the page for cycling
 function getMovieTitles() {
@@ -2112,6 +2203,16 @@ function resetVideoStore() {
     videostoreState.currentHighlightIndex = -1;
 }
 
+// Reset 3D video store state
+function reset3DVideoStore() {
+    const container = document.getElementById('videostore3dContainer');
+    container.classList.remove('active');
+
+    if (videoStore3D && is3DInitialized) {
+        videoStore3D.reset();
+    }
+}
+
 // ========== Reveal Animation ==========
 async function getRandomMovie() {
     const movies = getAllMoviesData();
@@ -2126,9 +2227,11 @@ async function getRandomMovie() {
 
     // Reset any previous state
     resetVideoStore();
+    reset3DVideoStore();
 
-    // Show overlay and video store
+    // Show overlay
     const overlay = document.getElementById('revealOverlay');
+    const videostore3dContainer = document.getElementById('videostore3dContainer');
     const videostoreContainer = document.getElementById('videostoreContainer');
     const spinner = document.getElementById('revealSpinner');
     const result = document.getElementById('revealResult');
@@ -2136,7 +2239,6 @@ async function getRandomMovie() {
     const particles = document.getElementById('revealParticles');
 
     overlay.classList.add('active');
-    videostoreContainer.classList.add('active');
     spinner.style.display = 'none';
     result.classList.remove('visible');
     actions.classList.remove('visible');
@@ -2155,7 +2257,6 @@ async function getRandomMovie() {
     } catch (error) {
         console.error('Error:', error);
         overlay.classList.remove('active');
-        videostoreContainer.classList.remove('active');
         if (error.message.includes('404')) {
             alert('No tagged movies found. Please tag some movies first!');
         } else {
@@ -2163,6 +2264,60 @@ async function getRandomMovie() {
         }
         return;
     }
+
+    // Try to use 3D video store if WebGL is supported
+    console.log('Attempting 3D video store, use3DVideoStore:', use3DVideoStore);
+    if (use3DVideoStore) {
+        try {
+            // Show 3D container FIRST (so it has dimensions for the renderer)
+            videostore3dContainer.classList.add('active');
+            videostoreContainer.classList.remove('active');
+
+            // Initialize 3D store if not already
+            if (!is3DInitialized) {
+                console.log('Initializing 3D video store...');
+                const success = await init3DVideoStore();
+                console.log('3D initialization result:', success);
+                if (!success) {
+                    throw new Error('3D initialization failed');
+                }
+            }
+
+            console.log('Using 3D video store');
+
+            // Update sound settings
+            if (videoStore3D) {
+                videoStore3D.soundEnabled = revealSoundEnabled;
+            }
+
+            // Start the 3D browsing animation
+            await videoStore3D.startBrowsingAnimation(movies, selectedMovie, () => {
+                // After 3D animation completes, transition to reveal
+                videostore3dContainer.classList.remove('active');
+
+                // Play static effect during transition
+                playStaticEffect();
+                showScanlines(true);
+
+                setTimeout(() => {
+                    playTrackingDistortion();
+                    revealFinalMovie();
+                }, 300);
+            });
+
+            return;
+        } catch (error) {
+            console.error('3D video store failed, falling back to CSS:', error);
+            console.error('Error stack:', error.stack);
+            use3DVideoStore = false;
+            videostore3dContainer.classList.remove('active');
+        }
+    } else {
+        console.log('3D video store disabled, using CSS fallback');
+    }
+
+    // CSS Fallback: Use the original video store implementation
+    videostoreContainer.classList.add('active');
 
     // Generate the video wall
     const totalBoxes = generateVideoWall(movies);
@@ -2302,8 +2457,9 @@ function closeReveal() {
     // Hide scanlines and effects
     showScanlines(false);
 
-    // Reset video store state
+    // Reset both CSS and 3D video store states
     resetVideoStore();
+    reset3DVideoStore();
 
     selectedMovie = null;
 }
@@ -2315,8 +2471,9 @@ function pickAgain() {
         cycleInterval = null;
     }
 
-    // Reset video store state
+    // Reset both CSS and 3D video store states
     resetVideoStore();
+    reset3DVideoStore();
 
     // Reset result display
     const result = document.getElementById('revealResult');
