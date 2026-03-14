@@ -64,6 +64,10 @@ class MovieWithTags(BaseModel):
     title: str
     tags: List[Category] = []
 
+class ShelfSelection(BaseModel):
+    shelf_movies: List[Movie]
+    selected_movie: Movie
+
 # Database utilities
 @contextmanager
 def get_db():
@@ -512,6 +516,57 @@ async def get_random_movie(category_ids: Optional[str] = None, exclude_untagged:
                 selected_movie = movies_data[-1]
         
         return Movie(**dict(selected_movie))
+
+@app.get("/api/movies/random-with-shelf", response_model=ShelfSelection)
+async def get_random_movie_with_shelf(shelf_size: int = 80, exclude_untagged: bool = False):
+    """Get a random selection of movies for the shelf display, with one selected movie chosen from those."""
+    import random
+
+    # Get all movies that match the criteria
+    base_query = '''
+        SELECT DISTINCT m.id, m.title, m.poster_url,
+               GROUP_CONCAT(c.name) as category_names,
+               GROUP_CONCAT(c.color) as category_colors
+        FROM movies m
+        LEFT JOIN movie_categories mc ON m.id = mc.movie_id
+        LEFT JOIN categories c ON mc.category_id = c.id
+    '''
+
+    conditions = []
+
+    # Exclude untagged movies if requested
+    if exclude_untagged:
+        conditions.append('''
+            m.id IN (
+                SELECT DISTINCT movie_id
+                FROM movie_categories
+            )
+        ''')
+
+    # Build final query
+    if conditions:
+        base_query += ' WHERE ' + ' AND '.join(conditions)
+
+    base_query += ' GROUP BY m.id, m.title'
+
+    with get_db() as conn:
+        movies_data = conn.execute(base_query).fetchall()
+
+        if not movies_data:
+            raise HTTPException(status_code=404, detail="No movies found matching criteria")
+
+        # Sample shelf_size unique movies (or all if fewer available)
+        sample_size = min(shelf_size, len(movies_data))
+        shelf_movies_data = random.sample(movies_data, sample_size)
+
+        # Randomly select one from the shelf movies
+        selected_movie_data = random.choice(shelf_movies_data)
+
+        # Convert to Movie objects
+        shelf_movies = [Movie(**dict(m)) for m in shelf_movies_data]
+        selected_movie = Movie(**dict(selected_movie_data))
+
+        return ShelfSelection(shelf_movies=shelf_movies, selected_movie=selected_movie)
 
 @app.get("/api/movies/search/{query}", response_model=List[Movie])
 async def search_movies(query: str):

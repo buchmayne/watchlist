@@ -1,8 +1,12 @@
-.PHONY: run scrape install clean reset-db help
+.PHONY: run stop scrape install clean reset-db help
 
 # Run the FastAPI application
 run:
 	uv run main.py
+
+# Stop the local server (kills process on port 8000)
+stop:
+	@lsof -ti:8000 | xargs kill -9 2>/dev/null || echo "No server running on port 8000"
 
 # Run the Letterboxd scraper to fetch movie titles
 scrape:
@@ -26,6 +30,7 @@ refresh: scrape run
 help:
 	@echo "Available commands:"
 	@echo "  make run       - Run the FastAPI application"
+	@echo "  make stop      - Stop the local server (port 8000)"
 	@echo "  make scrape    - Run the scraper to fetch movie titles"
 	@echo "  make install   - Install dependencies with uv"
 	@echo "  make clean     - Remove generated JSON/CSV files"
