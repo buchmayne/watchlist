@@ -7,13 +7,27 @@ from typing import List, Optional
 import sqlite3
 import json
 import os
+import re
+import requests
 from contextlib import contextmanager
+from dotenv import load_dotenv
 import uvicorn
+
+# Load environment variables
+load_dotenv()
+
+# TMDB API configuration
+TMDB_API_KEY = os.getenv('themoviedb_api_key')
+TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
 
 app = FastAPI(title="Movie Tagger", description="Tag and organize your movie collection")
 
 # Setup templates
 templates = Jinja2Templates(directory="templates")
+
+# Mount static files directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Database setup
 DATABASE = 'movies.db'
@@ -43,11 +57,16 @@ class Movie(BaseModel):
     title: str
     category_names: Optional[str] = None
     category_colors: Optional[str] = None
+    poster_url: Optional[str] = None
 
 class MovieWithTags(BaseModel):
     id: int
     title: str
     tags: List[Category] = []
+
+class ShelfSelection(BaseModel):
+    shelf_movies: List[Movie]
+    selected_movie: Movie
 
 # Database utilities
 @contextmanager
@@ -68,14 +87,14 @@ def init_db():
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT UNIQUE NOT NULL
             );
-            
+
             CREATE TABLE IF NOT EXISTS categories (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT UNIQUE NOT NULL,
                 color TEXT DEFAULT '#3b82f6',
                 weight REAL DEFAULT 1.0
             );
-            
+
             CREATE TABLE IF NOT EXISTS movie_categories (
                 movie_id INTEGER,
                 category_id INTEGER,
@@ -84,7 +103,7 @@ def init_db():
                 FOREIGN KEY (category_id) REFERENCES categories (id)
             );
         ''')
-        
+
         # Add weight column to existing categories table if it doesn't exist
         try:
             conn.execute('ALTER TABLE categories ADD COLUMN weight REAL DEFAULT 1.0')
@@ -92,7 +111,15 @@ def init_db():
         except sqlite3.OperationalError:
             # Column already exists
             pass
-        
+
+        # Add poster_url column to movies table if it doesn't exist
+        try:
+            conn.execute('ALTER TABLE movies ADD COLUMN poster_url TEXT')
+            conn.commit()
+        except sqlite3.OperationalError:
+            # Column already exists
+            pass
+
         conn.commit()
 
 def load_movies_from_file(filename='movie_titles.json'):
@@ -152,14 +179,70 @@ def load_movies_from_file(filename='movie_titles.json'):
 
     print(f"Found {len(titles)} movies in file: added {added} new, updated {updated} existing")
 
+
+# TMDB API Functions
+def search_tmdb_movie(title: str) -> Optional[str]:
+    """Search TMDB for a movie and return the poster URL if found."""
+    if not TMDB_API_KEY:
+        return None
+
+    # Extract year from title if present (e.g., "Movie Title (2020)")
+    year_match = re.match(r'^(.+?)\s*\((\d{4})\)$', title)
+    search_title = year_match.group(1) if year_match else title
+    year = year_match.group(2) if year_match else None
+
+    try:
+        params = {
+            'api_key': TMDB_API_KEY,
+            'query': search_title,
+            'include_adult': 'false'
+        }
+        if year:
+            params['year'] = year
+
+        response = requests.get(
+            f'{TMDB_BASE_URL}/search/movie',
+            params=params,
+            timeout=10
+        )
+        response.raise_for_status()
+        data = response.json()
+
+        if data.get('results') and len(data['results']) > 0:
+            # Get the first result's poster path
+            poster_path = data['results'][0].get('poster_path')
+            if poster_path:
+                return f'{TMDB_IMAGE_BASE_URL}{poster_path}'
+
+    except requests.RequestException as e:
+        print(f"TMDB API error for '{title}': {e}")
+
+    return None
+
+
+def fetch_and_cache_poster(movie_id: int, title: str) -> Optional[str]:
+    """Fetch poster from TMDB and cache in database."""
+    poster_url = search_tmdb_movie(title)
+
+    if poster_url:
+        with get_db() as conn:
+            conn.execute(
+                'UPDATE movies SET poster_url = ? WHERE id = ?',
+                (poster_url, movie_id)
+            )
+            conn.commit()
+
+    return poster_url
+
+
 # Routes
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """Main page showing all movies with tagging interface."""
     with get_db() as conn:
-        # Get all movies with their categories
+        # Get all movies with their categories and poster URLs
         movies_data = conn.execute('''
-            SELECT m.id, m.title,
+            SELECT m.id, m.title, m.poster_url,
                    GROUP_CONCAT(c.name) as category_names,
                    GROUP_CONCAT(c.color) as category_colors
             FROM movies m
@@ -168,16 +251,16 @@ async def index(request: Request):
             GROUP BY m.id, m.title
             ORDER BY m.title
         ''').fetchall()
-        
+
         movies = [dict(row) for row in movies_data]
-        
+
         # Get all categories
         categories_data = conn.execute('SELECT * FROM categories ORDER BY name').fetchall()
         categories = [dict(row) for row in categories_data]
-    
+
     return templates.TemplateResponse("index.html", {
-        "request": request, 
-        "movies": movies, 
+        "request": request,
+        "movies": movies,
         "categories": categories
     })
 
@@ -273,7 +356,7 @@ async def get_movies():
     """Get all movies with their tags."""
     with get_db() as conn:
         movies_data = conn.execute('''
-            SELECT m.id, m.title,
+            SELECT m.id, m.title, m.poster_url,
                    GROUP_CONCAT(c.name) as category_names,
                    GROUP_CONCAT(c.color) as category_colors
             FROM movies m
@@ -282,7 +365,7 @@ async def get_movies():
             GROUP BY m.id, m.title
             ORDER BY m.title
         ''').fetchall()
-        
+
         return [Movie(**dict(row)) for row in movies_data]
 
 @app.get("/api/movies/{movie_id}/tags", response_model=List[Category])
@@ -340,10 +423,10 @@ async def update_movie_tags(movie_id: int, tags_update: MovieTagsUpdate):
 async def get_random_movie(category_ids: Optional[str] = None, exclude_untagged: bool = False, use_weights: bool = True):
     """Get a random movie from the collection, optionally filtered by categories with weighted selection."""
     import random
-    
+
     # Get all movies that match the criteria
     base_query = '''
-        SELECT DISTINCT m.id, m.title,
+        SELECT DISTINCT m.id, m.title, m.poster_url,
                GROUP_CONCAT(c.name) as category_names,
                GROUP_CONCAT(c.color) as category_colors
         FROM movies m
@@ -434,12 +517,63 @@ async def get_random_movie(category_ids: Optional[str] = None, exclude_untagged:
         
         return Movie(**dict(selected_movie))
 
+@app.get("/api/movies/random-with-shelf", response_model=ShelfSelection)
+async def get_random_movie_with_shelf(shelf_size: int = 80, exclude_untagged: bool = False):
+    """Get a random selection of movies for the shelf display, with one selected movie chosen from those."""
+    import random
+
+    # Get all movies that match the criteria
+    base_query = '''
+        SELECT DISTINCT m.id, m.title, m.poster_url,
+               GROUP_CONCAT(c.name) as category_names,
+               GROUP_CONCAT(c.color) as category_colors
+        FROM movies m
+        LEFT JOIN movie_categories mc ON m.id = mc.movie_id
+        LEFT JOIN categories c ON mc.category_id = c.id
+    '''
+
+    conditions = []
+
+    # Exclude untagged movies if requested
+    if exclude_untagged:
+        conditions.append('''
+            m.id IN (
+                SELECT DISTINCT movie_id
+                FROM movie_categories
+            )
+        ''')
+
+    # Build final query
+    if conditions:
+        base_query += ' WHERE ' + ' AND '.join(conditions)
+
+    base_query += ' GROUP BY m.id, m.title'
+
+    with get_db() as conn:
+        movies_data = conn.execute(base_query).fetchall()
+
+        if not movies_data:
+            raise HTTPException(status_code=404, detail="No movies found matching criteria")
+
+        # Sample shelf_size unique movies (or all if fewer available)
+        sample_size = min(shelf_size, len(movies_data))
+        shelf_movies_data = random.sample(movies_data, sample_size)
+
+        # Randomly select one from the shelf movies
+        selected_movie_data = random.choice(shelf_movies_data)
+
+        # Convert to Movie objects
+        shelf_movies = [Movie(**dict(m)) for m in shelf_movies_data]
+        selected_movie = Movie(**dict(selected_movie_data))
+
+        return ShelfSelection(shelf_movies=shelf_movies, selected_movie=selected_movie)
+
 @app.get("/api/movies/search/{query}", response_model=List[Movie])
 async def search_movies(query: str):
     """Search movies by title."""
     with get_db() as conn:
         movies_data = conn.execute('''
-            SELECT m.id, m.title,
+            SELECT m.id, m.title, m.poster_url,
                    GROUP_CONCAT(c.name) as category_names,
                    GROUP_CONCAT(c.color) as category_colors
             FROM movies m
@@ -449,8 +583,63 @@ async def search_movies(query: str):
             GROUP BY m.id, m.title
             ORDER BY m.title
         ''', (f'%{query}%',)).fetchall()
-        
+
         return [Movie(**dict(row)) for row in movies_data]
+
+
+@app.post("/api/movies/fetch-posters")
+async def fetch_all_posters():
+    """Fetch posters from TMDB for all movies that don't have one cached."""
+    if not TMDB_API_KEY:
+        raise HTTPException(status_code=500, detail="TMDB API key not configured")
+
+    with get_db() as conn:
+        # Get movies without posters
+        movies = conn.execute(
+            'SELECT id, title FROM movies WHERE poster_url IS NULL'
+        ).fetchall()
+
+    fetched = 0
+    failed = 0
+
+    for movie in movies:
+        poster_url = fetch_and_cache_poster(movie['id'], movie['title'])
+        if poster_url:
+            fetched += 1
+        else:
+            failed += 1
+
+    return {
+        "success": True,
+        "fetched": fetched,
+        "failed": failed,
+        "total": len(movies)
+    }
+
+
+@app.get("/api/movies/{movie_id}/poster")
+async def get_movie_poster(movie_id: int):
+    """Get or fetch poster for a specific movie."""
+    with get_db() as conn:
+        movie = conn.execute(
+            'SELECT id, title, poster_url FROM movies WHERE id = ?',
+            (movie_id,)
+        ).fetchone()
+
+        if not movie:
+            raise HTTPException(status_code=404, detail="Movie not found")
+
+        # If we have a cached poster, return it
+        if movie['poster_url']:
+            return {"poster_url": movie['poster_url']}
+
+        # Otherwise fetch from TMDB
+        poster_url = fetch_and_cache_poster(movie['id'], movie['title'])
+
+        if poster_url:
+            return {"poster_url": poster_url}
+        else:
+            return {"poster_url": None}
 
 # Startup event
 @app.on_event("startup")
