@@ -10,12 +10,12 @@ class LetterboxdTitleScraper:
     def __init__(self):
         self.scraper = cloudscraper.create_scraper()
 
-    def scrape_titles(self, list_url: str) -> List[str]:
+    def scrape_titles(self, list_url: str, max_pages: int = 20) -> List[str]:
         """Extract movie titles from a Letterboxd list."""
         titles = []
         page = 1
 
-        while True:
+        while page <= max_pages:
             page_url = f"{list_url}page/{page}/" if page > 1 else list_url
             print(f"Scraping page {page}...")
 
@@ -52,13 +52,9 @@ class LetterboxdTitleScraper:
             titles.extend(page_titles)
             print(f"Found {len(page_titles)} titles on page {page}")
 
-            # Check for next page
-            pagination = soup.find("div", class_="paginate-pages")
-            if pagination:
-                next_link = pagination.find("a", class_="next")
-                if not next_link:
-                    break
-            else:
+            # If we got fewer items than a full page, we've reached the end
+            # Letterboxd shows 100 items per page
+            if len(page_titles) < 100:
                 break
 
             page += 1
