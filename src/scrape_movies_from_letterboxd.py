@@ -3,19 +3,23 @@ from bs4 import BeautifulSoup
 import time
 import json
 import csv
+import os
 from typing import List
+
+# Base directory (project root, parent of src/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class LetterboxdTitleScraper:
     def __init__(self):
         self.scraper = cloudscraper.create_scraper()
 
-    def scrape_titles(self, list_url: str) -> List[str]:
+    def scrape_titles(self, list_url: str, max_pages: int = 20) -> List[str]:
         """Extract movie titles from a Letterboxd list."""
         titles = []
         page = 1
 
-        while True:
+        while page <= max_pages:
             page_url = f"{list_url}page/{page}/" if page > 1 else list_url
             print(f"Scraping page {page}...")
 
@@ -52,13 +56,9 @@ class LetterboxdTitleScraper:
             titles.extend(page_titles)
             print(f"Found {len(page_titles)} titles on page {page}")
 
-            # Check for next page
-            pagination = soup.find("div", class_="paginate-pages")
-            if pagination:
-                next_link = pagination.find("a", class_="next")
-                if not next_link:
-                    break
-            else:
+            # If we got fewer items than a full page, we've reached the end
+            # Letterboxd shows 100 items per page
+            if len(page_titles) < 100:
                 break
 
             page += 1
@@ -66,8 +66,10 @@ class LetterboxdTitleScraper:
 
         return titles
 
-    def save_to_csv(self, titles: List[str], filename: str = "movie_titles.csv"):
+    def save_to_csv(self, titles: List[str], filename: str = None):
         """Save titles to CSV file."""
+        if filename is None:
+            filename = os.path.join(BASE_DIR, "data", "movie_titles.csv")
         with open(filename, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(["title"])  # Header
@@ -75,8 +77,10 @@ class LetterboxdTitleScraper:
                 writer.writerow([title])
         print(f"Saved {len(titles)} titles to {filename}")
 
-    def save_to_json(self, titles: List[str], filename: str = "movie_titles.json"):
+    def save_to_json(self, titles: List[str], filename: str = None):
         """Save titles to JSON file."""
+        if filename is None:
+            filename = os.path.join(BASE_DIR, "data", "movie_titles.json")
         with open(filename, "w", encoding="utf-8") as jsonfile:
             json.dump(titles, jsonfile, indent=2, ensure_ascii=False)
         print(f"Saved {len(titles)} titles to {filename}")

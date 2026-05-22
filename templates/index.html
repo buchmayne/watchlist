@@ -85,13 +85,51 @@
         background: linear-gradient(145deg, var(--nord2) 0%, var(--nord1) 100%);
         border: 1px solid var(--border-accent);
         border-radius: 12px;
-        padding: 1.25rem;
+        padding: 1rem;
         cursor: pointer;
         transition: all 0.3s var(--transition-smooth);
         position: relative;
         opacity: 0;
         transform: translateY(12px);
         animation: cardReveal 0.4s var(--transition-smooth) forwards;
+        display: flex;
+        gap: 1rem;
+    }
+
+    .movie-poster {
+        flex-shrink: 0;
+        width: 70px;
+        height: 105px;
+        border-radius: 6px;
+        overflow: hidden;
+        background: var(--nord3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .movie-poster img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s var(--transition-smooth);
+    }
+
+    .movie-card:hover .movie-poster img {
+        transform: scale(1.05);
+    }
+
+    .movie-poster-placeholder {
+        color: var(--text-muted);
+        font-size: 1.5rem;
+        opacity: 0.4;
+    }
+
+    .movie-content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
     }
 
     .movie-card::before {
@@ -122,17 +160,21 @@
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 0.875rem;
-        gap: 1rem;
+        margin-bottom: 0.5rem;
+        gap: 0.5rem;
     }
 
     .movie-title {
         font-family: 'Nunito', sans-serif;
         font-weight: 600;
-        font-size: 1rem;
+        font-size: 0.95rem;
         color: var(--text-primary);
-        line-height: 1.4;
+        line-height: 1.3;
         flex: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
     .tag-hint {
@@ -158,8 +200,9 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.35rem;
-        min-height: 26px;
-        align-items: center;
+        align-items: flex-start;
+        align-content: flex-start;
+        flex: 1;
     }
 
     .no-tags {
@@ -680,6 +723,7 @@
         <div class="search-wrapper">
             <input type="text" id="searchInput" placeholder="Search movies...">
         </div>
+        <button class="btn btn-secondary" id="untaggedFilter" onclick="toggleUntaggedFilter()">Show Untagged</button>
         <button class="btn btn-primary btn-random" onclick="getRandomMovie()">Pick Random</button>
     </div>
 </div>
@@ -689,25 +733,35 @@
     {% for movie in movies %}
     <div class="movie-card" data-title="{{ movie.title|lower }}"
          data-poster="{{ movie.poster_url or '' }}"
+         data-has-tags="{{ 'true' if movie.category_names else 'false' }}"
          style="animation-delay: {{ loop.index0 * 25 }}ms;"
          onclick="openTagModal({{ movie.id }}, '{{ movie.title|replace("'", "\\'") }}')">
-        <div class="movie-header">
-            <h3 class="movie-title">{{ movie.title }}</h3>
-            <span class="tag-hint">+ Tag</span>
-        </div>
-
-        <div class="movie-tags">
-            {% if movie.category_names %}
-                {% set names = movie.category_names.split(',') %}
-                {% set colors = movie.category_colors.split(',') %}
-                {% for name in names %}
-                <span class="tag" style="background-color: {{ colors[loop.index0] }};">
-                    {{ name }}
-                </span>
-                {% endfor %}
+        <div class="movie-poster">
+            {% if movie.poster_url %}
+            <img src="{{ movie.poster_url }}" alt="{{ movie.title }}" loading="lazy">
             {% else %}
-                <span class="no-tags">No tags yet</span>
+            <span class="movie-poster-placeholder">🎬</span>
             {% endif %}
+        </div>
+        <div class="movie-content">
+            <div class="movie-header">
+                <h3 class="movie-title">{{ movie.title }}</h3>
+                <span class="tag-hint">+ Tag</span>
+            </div>
+
+            <div class="movie-tags">
+                {% if movie.category_names %}
+                    {% set names = movie.category_names.split(',') %}
+                    {% set colors = movie.category_colors.split(',') %}
+                    {% for name in names %}
+                    <span class="tag" style="background-color: {{ colors[loop.index0] }};">
+                        {{ name }}
+                    </span>
+                    {% endfor %}
+                {% else %}
+                    <span class="no-tags">No tags yet</span>
+                {% endif %}
+            </div>
         </div>
     </div>
     {% endfor %}
@@ -1365,25 +1419,46 @@ function saveTags() {
     });
 }
 
+// Untagged filter state
+let showUntaggedOnly = false;
+
+function toggleUntaggedFilter() {
+    showUntaggedOnly = !showUntaggedOnly;
+    const btn = document.getElementById('untaggedFilter');
+
+    if (showUntaggedOnly) {
+        btn.textContent = 'Show All';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+    } else {
+        btn.textContent = 'Show Untagged';
+        btn.classList.remove('btn-primary');
+        btn.classList.add('btn-secondary');
+    }
+
+    applyFilters();
+}
+
+function applyFilters() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+
+    document.querySelectorAll('.movie-card').forEach(card => {
+        const title = card.dataset.title;
+        const hasTags = card.dataset.hasTags === 'true';
+
+        const matchesSearch = searchTerm === '' || title.includes(searchTerm);
+        const matchesTagFilter = !showUntaggedOnly || !hasTags;
+
+        card.style.display = (matchesSearch && matchesTagFilter) ? 'flex' : 'none';
+    });
+}
+
 // Search with debouncing
 let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase().trim();
-
     clearTimeout(searchTimeout);
-
-    if (searchTerm === '') {
-        document.querySelectorAll('.movie-card').forEach(card => {
-            card.style.display = 'block';
-        });
-        return;
-    }
-
     searchTimeout = setTimeout(() => {
-        document.querySelectorAll('.movie-card').forEach(card => {
-            const title = card.dataset.title;
-            card.style.display = title.includes(searchTerm) ? 'block' : 'none';
-        });
+        applyFilters();
     }, 150);
 });
 

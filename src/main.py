@@ -13,8 +13,11 @@ from contextlib import contextmanager
 from dotenv import load_dotenv
 import uvicorn
 
+# Base directory (project root, parent of src/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 # Load environment variables
-load_dotenv()
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 # TMDB API configuration
 TMDB_API_KEY = os.getenv('themoviedb_api_key')
@@ -24,13 +27,13 @@ TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500'
 app = FastAPI(title="Movie Tagger", description="Tag and organize your movie collection")
 
 # Setup templates
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Mount static files directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 
 # Database setup
-DATABASE = 'movies.db'
+DATABASE = os.path.join(BASE_DIR, 'data', 'movies.db')
 
 # Pydantic models
 class CategoryCreate(BaseModel):
@@ -122,13 +125,16 @@ def init_db():
 
         conn.commit()
 
-def load_movies_from_file(filename='movie_titles.json'):
+def load_movies_from_file(filename=None):
     """Load only new movies from the scraped JSON file into database.
 
     Handles title format changes (e.g., 'Movie' -> 'Movie (2020)') by updating
     existing entries rather than creating duplicates.
     """
     import re
+
+    if filename is None:
+        filename = os.path.join(BASE_DIR, 'data', 'movie_titles.json')
 
     if not os.path.exists(filename):
         print(f"No {filename} found. Run the scraper first.")
@@ -653,4 +659,5 @@ async def startup_event():
 
 # For development
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    # Note: reload requires running as module from project root: python -m src.main
+    uvicorn.run(app, host="0.0.0.0", port=8000)
