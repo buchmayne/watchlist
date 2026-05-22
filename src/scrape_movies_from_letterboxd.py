@@ -3,7 +3,11 @@ from bs4 import BeautifulSoup
 import time
 import json
 import csv
+import os
 from typing import List
+
+# Base directory (project root, parent of src/)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class LetterboxdTitleScraper:
@@ -62,8 +66,10 @@ class LetterboxdTitleScraper:
 
         return titles
 
-    def save_to_csv(self, titles: List[str], filename: str = "movie_titles.csv"):
+    def save_to_csv(self, titles: List[str], filename: str = None):
         """Save titles to CSV file."""
+        if filename is None:
+            filename = os.path.join(BASE_DIR, "data", "movie_titles.csv")
         with open(filename, "w", newline="", encoding="utf-8") as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(["title"])  # Header
@@ -71,8 +77,10 @@ class LetterboxdTitleScraper:
                 writer.writerow([title])
         print(f"Saved {len(titles)} titles to {filename}")
 
-    def save_to_json(self, titles: List[str], filename: str = "movie_titles.json"):
+    def save_to_json(self, titles: List[str], filename: str = None):
         """Save titles to JSON file."""
+        if filename is None:
+            filename = os.path.join(BASE_DIR, "data", "movie_titles.json")
         with open(filename, "w", encoding="utf-8") as jsonfile:
             json.dump(titles, jsonfile, indent=2, ensure_ascii=False)
         print(f"Saved {len(titles)} titles to {filename}")
