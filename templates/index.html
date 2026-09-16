@@ -963,54 +963,6 @@ function playVHSInsertSound() {
     }, 700);
 }
 
-// Enhanced reveal sound - triumphant fanfare
-function playRevealSound() {
-    if (!revealSoundEnabled || !audioContext) return;
-
-    // Ascending arpeggio with richer harmonics
-    const notes = [
-        { freq: 261.63, delay: 0 },      // C4
-        { freq: 329.63, delay: 0.08 },   // E4
-        { freq: 392.00, delay: 0.16 },   // G4
-        { freq: 523.25, delay: 0.24 },   // C5
-        { freq: 659.25, delay: 0.35 },   // E5
-        { freq: 783.99, delay: 0.50 },   // G5
-    ];
-
-    notes.forEach(note => {
-        const oscillator = audioContext.createOscillator();
-        const oscillator2 = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-        const filter = audioContext.createBiquadFilter();
-
-        oscillator.connect(gainNode);
-        oscillator2.connect(gainNode);
-        gainNode.connect(filter);
-        filter.connect(audioContext.destination);
-
-        oscillator.type = 'sine';
-        oscillator2.type = 'triangle';
-        oscillator.frequency.setValueAtTime(note.freq, audioContext.currentTime);
-        oscillator2.frequency.setValueAtTime(note.freq * 2, audioContext.currentTime); // Octave up
-
-        filter.type = 'lowpass';
-        filter.frequency.setValueAtTime(3000, audioContext.currentTime);
-
-        const startTime = audioContext.currentTime + note.delay;
-        const duration = 1.2 - note.delay;
-
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.12, startTime + 0.02);
-        gainNode.gain.setValueAtTime(0.1, startTime + 0.1);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
-
-        oscillator.start(startTime);
-        oscillator.stop(startTime + duration);
-        oscillator2.start(startTime);
-        oscillator2.stop(startTime + duration);
-    });
-}
-
 // VHS static/noise sound
 function playStaticSound(duration = 0.3) {
     if (!revealSoundEnabled || !audioContext) return;
@@ -1088,32 +1040,6 @@ function getAllMoviesData() {
             year: ''
         };
     }).filter(m => m.title);
-}
-
-// Play ascending arpeggio for selection
-function playSelectionSound() {
-    if (!revealSoundEnabled || !audioContext) return;
-
-    const frequencies = [392, 493.88, 587.33, 783.99]; // G4, B4, D5, G5
-
-    frequencies.forEach((freq, i) => {
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
-
-        const startTime = audioContext.currentTime + (i * 0.1);
-        gainNode.gain.setValueAtTime(0, startTime);
-        gainNode.gain.linearRampToValueAtTime(0.12, startTime + 0.02);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
-
-        oscillator.start(startTime);
-        oscillator.stop(startTime + 0.5);
-    });
 }
 
 // ========== VHS Visual Effects ==========
@@ -1248,9 +1174,8 @@ async function getRandomMovie() {
     // Initialize VideoStoreImage if not already done
     if (!videoStoreImage) {
         videoStoreImage = new VideoStoreImage(videostoreContainer);
-        // Connect sound callbacks
+        // Connect sound callbacks (final selection sound removed)
         videoStoreImage.onTickSound = (pitch) => playTickSound(pitch);
-        videoStoreImage.onSelectionSound = () => playSelectionSound();
         videoStoreImage.soundEnabled = revealSoundEnabled;
         await videoStoreImage.init();
     } else {
@@ -1317,8 +1242,7 @@ function revealFinalMovie() {
     // Show result with animation
     result.classList.add('visible');
 
-    // Play reveal sound and create particles
-    playRevealSound();
+    // Create particles (reveal sound removed)
     createParticleBurst();
 
     // Fade out scanlines gradually

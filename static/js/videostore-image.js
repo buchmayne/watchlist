@@ -21,7 +21,6 @@ class VideoStoreImage {
 
         // Sound callbacks (to be set by parent)
         this.onTickSound = null;
-        this.onSelectionSound = null;
         this.soundEnabled = true;
     }
 
@@ -387,10 +386,6 @@ class VideoStoreImage {
      * Handle final movie selection animation
      */
     selectMovie(index) {
-        if (this.onSelectionSound && this.soundEnabled) {
-            this.onSelectionSound();
-        }
-
         const element = this.posterElements[index];
         if (element) {
             element.classList.remove('highlighted');
